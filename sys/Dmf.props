@@ -5,11 +5,11 @@
   <PropertyGroup>
     <_PropertySheetDisplayName>Driver Module Framework</_PropertySheetDisplayName>
     <!-- By default, look for DMF in parent root directory, otherwise use environment variable value -->
-    <DmfRootPath Condition="'$(DmfRootPath)' == ''">$(SolutionDir)..\</DmfRootPath>
+    <DmfRootPath Condition="'$(DmfRootPath)' == ''">$(SolutionDir)..\DMF</DmfRootPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(DmfRootPath)\DMF\Modules.Library;$(DmfRootPath)\DMF\Modules.Template;$(DmfRootPath)\DMF\Modules.Library.Tests;$(DmfRootPath)\DMF\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DmfRootPath)\Dmf\Modules.Library;$(DmfRootPath)\Dmf\Modules.Template;$(DmfRootPath)\Dmf\Modules.Library.Tests;$(DmfRootPath)\Dmf\Framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies Condition="'$(DriverType)'=='KMDF'">$(DmfRootPath)\$(Configuration)\$(PlatformName)\lib\DmfK\DmfK.lib;$(DmfRootPath)\$(Configuration)\$(PlatformName)\individual_libs\DmfKModules.Template\DmfKModules.Template.lib;%(AdditionalDependencies);</AdditionalDependencies>
