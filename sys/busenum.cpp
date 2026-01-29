@@ -40,6 +40,7 @@
 #include "EmulationTargetPDO.hpp"
 #include "XusbPdo.hpp"
 #include "Ds4Pdo.hpp"
+#include "Ds5Pdo.hpp"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, Bus_PlugInDevice)
@@ -50,9 +51,11 @@ using ViGEm::Bus::Core::PDO_IDENTIFICATION_DESCRIPTION;
 using ViGEm::Bus::Core::EmulationTargetPDO;
 using ViGEm::Bus::Targets::EmulationTargetXUSB;
 using ViGEm::Bus::Targets::EmulationTargetDS4;
+using ViGEm::Bus::Targets::EmulationTargetDS5;
 
 //
 // Simulates a device plug-in event.
+// IOCTL_VIGEM_PLUGIN_TARGET 到达之处？
 // 
 EXTERN_C NTSTATUS Bus_PlugInDevice(
 	_In_ WDFDEVICE Device,
@@ -151,6 +154,12 @@ EXTERN_C NTSTATUS Bus_PlugInDevice(
 			description.Target = new EmulationTargetDS4(plugIn->SerialNo, pFileData->SessionId);
 
 			break;
+			
+		case DualSense5Wired:
+			
+			description.Target = new EmulationTargetDS5(plugIn->SerialNo, pFileData->SessionId);
+			
+			break;
 		default:
 			return STATUS_NOT_SUPPORTED;
 		}
@@ -178,6 +187,18 @@ EXTERN_C NTSTATUS Bus_PlugInDevice(
 				plugIn->ProductId
 			);
 
+			break;
+			
+		case DualSense5Wired:
+			// DS5 入口点，终于找到了
+			
+			description.Target = new EmulationTargetDS5(
+				plugIn->SerialNo,
+				pFileData->SessionId,
+				plugIn->VendorId,
+				plugIn->ProductId
+			);
+			
 			break;
 		default:
 			return STATUS_NOT_SUPPORTED;

@@ -42,6 +42,7 @@
     <ClInclude Include="Driver.h" />
     <ClInclude Include="CRTCPP.hpp" />
     <ClInclude Include="Ds4Pdo.hpp" />
+    <ClInclude Include="Ds5Pdo.hpp" />
     <ClInclude Include="EmulationTargetPDO.hpp" />
     <ClInclude Include="Queue.hpp" />
     <ClInclude Include="resource.h" />
@@ -56,6 +57,7 @@
     <ClCompile Include="buspdo.cpp" />
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="Ds4Pdo.cpp" />
+    <ClCompile Include="Ds5Pdo.cpp" />
     <ClCompile Include="EmulationTargetPDO.cpp" />
     <ClCompile Include="Queue.cpp" />
     <ClCompile Include="XusbPdo.cpp" />
@@ -255,6 +257,9 @@
     <Link>
       <AdditionalDependencies>$(DDK_LIB_PATH)wdmsec.lib;%(AdditionalDependencies);ntstrsafe.lib;usbdex.lib</AdditionalDependencies>
     </Link>
+    <DriverSign>
+      <FileDigestAlgorithm>SHA256</FileDigestAlgorithm>
+    </DriverSign>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
