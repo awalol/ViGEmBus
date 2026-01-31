@@ -210,9 +210,14 @@ EXTERN_C NTSTATUS Bus_PlugInDevice(
 		goto pluginEnd;
 	}
 
+	// 把 FDO 上创建的 UserNotification DMF 模块句柄，注入到 DS4 PDO 对象里，让 DS4 PDO 能在收到 OUT 报告时调用 DMF_NotifyUserWithRequestMultiple_DataBroadcast(...) 去“广播/唤醒”用户态等待者。
 	if (plugIn->TargetType == DualShock4Wired)
 	{
 		static_cast<EmulationTargetDS4*>(description.Target)->SetOutputReportNotifyModule(FdoGetData(Device)->UserNotification);
+	}
+	if (plugIn->TargetType == DualSense5Wired)
+	{
+		static_cast<EmulationTargetDS5*>(description.Target)->SetOutputReportNotifyModule(FdoGetData(Device)->UserNotification);
 	}
 
 	status = WdfChildListAddOrUpdateChildDescriptionAsPresent(

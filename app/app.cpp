@@ -82,12 +82,12 @@ int main()
 	// report.wButtons = XUSB_GAMEPAD_A;
 	// vigem_target_x360_send_report(target, report);
 	
-	// DS4_OUTPUT_BUFFER out;
+	DS5_OUTPUT_BUFFER out;
 
 	while (TRUE) 
 	{
-		/*//error = vigem_target_ds4_await_output_report(client, ds4, &out);
-		error = vigem_target_ds4_await_output_report_timeout(client, ds, 100, &out);
+		//error = vigem_target_ds4_await_output_report(client, ds4, &out);
+		error = vigem_target_ds5_await_output_report_timeout(client, ds, 100, &out);
 		
 		if (VIGEM_SUCCESS(error))
 		{
@@ -98,6 +98,6 @@ int main()
 			auto win32 = GetLastError();
 
 			auto t = 0;
-		}*/
+		}
 	}
 }
