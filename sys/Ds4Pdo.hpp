@@ -101,6 +101,8 @@ namespace ViGEm::Bus::Targets
 
 		VOID SetOutputReportNotifyModule(DMFMODULE Module);
 
+		static NTSTATUS USB_BUSIFFN UsbInterfaceSubmitIsoOutUrb(IN PVOID BusContext, IN PURB Urb);
+
 	private:
 		static EVT_WDF_TIMER PendingUsbRequestsTimerFunc;
 
@@ -125,7 +127,7 @@ namespace ViGEm::Bus::Targets
 		static const int HID_REPORT_ID_3 = 0x13;
 		static const int HID_REPORT_ID_4 = 0x14;
 
-		static const int DS4_DESCRIPTOR_SIZE = 0x0029;
+		static const int DS4_DESCRIPTOR_SIZE = 0x00E3;
 #if defined(_X86_)
 		static const int DS4_CONFIGURATION_SIZE = 0x0050;
 #else
@@ -133,7 +135,7 @@ namespace ViGEm::Bus::Targets
 #endif
 
 		static const int DS4_MANUFACTURER_NAME_LENGTH = 0x38;
-		static const int DS4_PRODUCT_NAME_LENGTH = 0x28;
+		static const int DS4_PRODUCT_NAME_LENGTH = 0x3c;
 		static const int DS4_OUTPUT_BUFFER_OFFSET = 0x04;
 		static const int DS4_OUTPUT_BUFFER_LENGTH = 0x05;
 

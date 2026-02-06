@@ -55,7 +55,6 @@
         WPP_DEFINE_BIT(TRACE_UTIL)                                     \
         WPP_DEFINE_BIT(TRACE_XGIP)                                     \
         WPP_DEFINE_BIT(TRACE_XUSB)                                     \
-        WPP_DEFINE_BIT(TRACE_DS5)                                      \
         )                             
 
 #define WPP_FLAG_LEVEL_LOGGER(flag, level)                                  \

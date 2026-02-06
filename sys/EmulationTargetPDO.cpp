@@ -617,9 +617,16 @@ NTSTATUS USB_BUSIFFN ViGEm::Bus::Core::EmulationTargetPDO::UsbInterfaceQueryBusI
 NTSTATUS USB_BUSIFFN ViGEm::Bus::Core::EmulationTargetPDO::UsbInterfaceSubmitIsoOutUrb(IN PVOID BusContext, IN PURB Urb)
 {
 	UNREFERENCED_PARAMETER(BusContext);
-	UNREFERENCED_PARAMETER(Urb);
+	// UNREFERENCED_PARAMETER(Urb);
+	//
+	// return STATUS_UNSUCCESSFUL;
+	
+	if (Urb)
+	{
+		Urb->UrbHeader.Status = USBD_STATUS_SUCCESS;
+	}
 
-	return STATUS_UNSUCCESSFUL;
+	return STATUS_SUCCESS;
 }
 
 NTSTATUS USB_BUSIFFN ViGEm::Bus::Core::EmulationTargetPDO::UsbInterfaceQueryBusTime(
