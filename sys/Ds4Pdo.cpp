@@ -692,7 +692,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS4::SelectConfiguration(PURB Urb)
     }
 
     PUSBD_INTERFACE_INFORMATION pInfo = &Urb->UrbSelectConfiguration.Interface;
-    
+
     // INTERFACE 0: Audio Control (no endpoints)
     TraceVerbose(
         TRACE_DS4,
@@ -707,9 +707,9 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS4::SelectConfiguration(PURB Urb)
     pInfo->Protocol = 0x00;
     pInfo->InterfaceHandle = reinterpret_cast<USBD_INTERFACE_HANDLE>(0xFFFF0000);
     // No pipes for Audio Control interface
-    
-	pInfo = (PUSBD_INTERFACE_INFORMATION)((PCHAR)pInfo + pInfo->Length);
-    
+
+    pInfo = (PUSBD_INTERFACE_INFORMATION)((PCHAR)pInfo + pInfo->Length);
+
     // INTERFACE 1: Audio Streaming OUT (Alternate 0 - no endpoints, idle state)
     TraceVerbose(
         TRACE_DS4,
@@ -718,15 +718,15 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS4::SelectConfiguration(PURB Urb)
         static_cast<int>(pInfo->InterfaceNumber),
         static_cast<int>(pInfo->AlternateSetting),
         pInfo->NumberOfPipes);
-    
+
     pInfo->Class = 0x01; // Audio
     pInfo->SubClass = 0x02; // Audio Streaming
     pInfo->Protocol = 0x00;
     pInfo->InterfaceHandle = reinterpret_cast<USBD_INTERFACE_HANDLE>(0xFFFF0001);
     // Alternate 0 has no endpoints (will switch to Alt 1 via SELECT_INTERFACE when needed)
-    
-	pInfo = (PUSBD_INTERFACE_INFORMATION)((PCHAR)pInfo + pInfo->Length);
-    
+
+    pInfo = (PUSBD_INTERFACE_INFORMATION)((PCHAR)pInfo + pInfo->Length);
+
     // INTERFACE 2: Audio Streaming IN (Alternate 0 - no endpoints, idle state)
     TraceVerbose(
         TRACE_DS4,
@@ -735,15 +735,15 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS4::SelectConfiguration(PURB Urb)
         static_cast<int>(pInfo->InterfaceNumber),
         static_cast<int>(pInfo->AlternateSetting),
         pInfo->NumberOfPipes);
-    
+
     pInfo->Class = 0x01; // Audio
     pInfo->SubClass = 0x02; // Audio Streaming
     pInfo->Protocol = 0x00;
     pInfo->InterfaceHandle = reinterpret_cast<USBD_INTERFACE_HANDLE>(0xFFFF0002);
     // Alternate 0 has no endpoints (will switch to Alt 1 via SELECT_INTERFACE when needed)
-    
+
     pInfo = (PUSBD_INTERFACE_INFORMATION)((PCHAR)pInfo + pInfo->Length);
-    
+
     // INTERFACE 3: HID (2 endpoints - IN and OUT)
     TraceVerbose(
         TRACE_DS4,
@@ -800,154 +800,370 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS4::UsbClassInterface(PURB Urb)
         pRequest->Index,
         pRequest->TransferBufferLength);
 
-    switch (pRequest->Request)
+    switch (pRequest->RequestTypeReservedBits)
     {
-    case HID_REQUEST_GET_REPORT:
+    case 0xa1: // USBHID
         {
-            UCHAR reportId = hid_get_report_id(pRequest); // 低位
-            UCHAR reportType = hid_get_report_type(pRequest); // 高位
-
-            TraceVerbose(
-                TRACE_USBPDO,
-                ">> >> >> >> GET_REPORT(%d): %d",
-                reportType, reportId);
-
-            switch (reportType)
+            switch (pRequest->Request)
             {
-            case HID_REPORT_TYPE_FEATURE:
+            case HID_REQUEST_GET_REPORT:
                 {
-                    switch (reportId)
+                    UCHAR reportId = get_low_bytes(pRequest->Value); // 低位
+                    UCHAR reportType = get_high_bytes(pRequest->Value); // 高位
+
+                    TraceVerbose(
+                        TRACE_USBPDO,
+                        ">> >> >> >> GET_REPORT(%d): %d",
+                        reportType, reportId);
+
+                    switch (reportType)
                     {
-                    case HID_REPORT_ID_0:
+                    case HID_REPORT_TYPE_FEATURE:
                         {
-                            // Source: http://eleccelerator.com/wiki/index.php?title=DualShock_4#Class_Requests
-                            UCHAR Response[] =
+                            switch (reportId)
                             {
-                                0xA3, 0x41, 0x75, 0x67, 0x20, 0x20, 0x33, 0x20,
-                                0x32, 0x30, 0x31, 0x33, 0x00, 0x00, 0x00, 0x00,
-                                0x00, 0x30, 0x37, 0x3A, 0x30, 0x31, 0x3A, 0x31,
-                                0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                0x00, 0x00, 0x01, 0x00, 0x31, 0x03, 0x00, 0x00,
-                                0x00, 0x49, 0x00, 0x05, 0x00, 0x00, 0x80, 0x03,
-                                0x00
-                            };
+                            case HID_REPORT_FIRMWARE_INFO_ID:
+                                {
+                                    UCHAR Response[] =
+                                    {
+                                        0x20, 0x4a, 0x75, 0x6c, 0x20, 0x20, 0x34, 0x20,
+                                        0x32, 0x30, 0x32, 0x35, 0x31, 0x30, 0x3a, 0x33,
+                                        0x38, 0x3a, 0x34, 0x30, 0x03, 0x00, 0x0b, 0x00,
+                                        0x11, 0x08, 0x00, 0x00, 0x2a, 0x00, 0x10, 0x01,
+                                        0x00, 0x28, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0x00, 0x00, 0x00, 0x30, 0x06, 0x00, 0x00,
+                                        0x01, 0x00, 0x03, 0x00, 0x10, 0x10, 0x03, 0x00,
+                                        0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+                                    };
 
-                            pRequest->TransferBufferLength = ARRAYSIZE(Response);
-                            RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
 
-                            break;
-                        }
-                    case HID_REPORT_ID_1:
-                        {
-                            // Source: http://eleccelerator.com/wiki/index.php?title=DualShock_4#Class_Requests
-                            UCHAR Response[] =
-                            {
-                                0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x87,
-                                0x22, 0x7B, 0xDD, 0xB2, 0x22, 0x47, 0xDD, 0xBD,
-                                0x22, 0x43, 0xDD, 0x1C, 0x02, 0x1C, 0x02, 0x7F,
-                                0x1E, 0x2E, 0xDF, 0x60, 0x1F, 0x4C, 0xE0, 0x3A,
-                                0x1D, 0xC6, 0xDE, 0x08, 0x00
-                            };
+                                    break;
+                                }
+                            case HID_REPORT_HARDWARE_INFO_ID:
+                                {
+                                    UCHAR Response[] =
+                                    {
+                                        0x22, 0x03, 0x00, 0x11, 0x08, 0x00, 0x00, 0x2a,
+                                        0x00, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0xec, 0x38, 0xe4, 0x9a, 0x3a, 0x14, 0x10,
+                                        0x10, 0x03, 0x00, 0x06, 0x00, 0x00, 0x00, 0x19,
+                                        0x00, 0x00, 0x00, 0x1d, 0x6c, 0x0e, 0x1f, 0x04,
+                                        0x01, 0x01, 0x03, 0x00, 0x00, 0x41, 0x50, 0x34,
+                                        0x4c, 0x36, 0x32, 0x36, 0x10, 0x01, 0x00, 0x03,
+                                        0x00, 0x20, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00
+                                    };
 
-                            pRequest->TransferBufferLength = ARRAYSIZE(Response);
-                            RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
 
-                            break;
-                        }
-                    case HID_REPORT_MAC_ADDRESSES_ID:
-                        {
-                            // Source: http://eleccelerator.com/wiki/index.php?title=DualShock_4#Class_Requests
-                            UCHAR Response[] =
-                            {
-                                0x12, 0x8B, 0x09, 0x07, 0x6D, 0x66, 0x1C, 0x08,
-                                0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-                            };
+                                    break;
+                                }
+                            case HID_REPORT_MAC_ADDRESSES_ID:
+                                {
+                                    // Source: http://eleccelerator.com/wiki/index.php?title=DualShock_4#Class_Requests
+                                    UCHAR Response[] =
+                                    {
+                                        0x12, 0x8B, 0x09, 0x07, 0x6D, 0x66, 0x1C, 0x08,
+                                        0x25, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+                                    };
 
-                            // Insert (auto-generated) target MAC address into response
-                            RtlCopyBytes(Response + 1, &this->_TargetMacAddress, sizeof(MAC_ADDRESS));
-                            // Adjust byte order
-                            ReverseByteArray(Response + 1, sizeof(MAC_ADDRESS));
+                                    // Insert (auto-generated) target MAC address into response
+                                    RtlCopyBytes(Response + 1, &this->_TargetMacAddress, sizeof(MAC_ADDRESS));
+                                    // Adjust byte order
+                                    ReverseByteArray(Response + 1, sizeof(MAC_ADDRESS));
 
-                            // Insert (auto-generated) host MAC address into response
-                            RtlCopyBytes(Response + 10, &this->_HostMacAddress, sizeof(MAC_ADDRESS));
-                            // Adjust byte order
-                            ReverseByteArray(Response + 10, sizeof(MAC_ADDRESS));
+                                    // Insert (auto-generated) host MAC address into response
+                                    RtlCopyBytes(Response + 10, &this->_HostMacAddress, sizeof(MAC_ADDRESS));
+                                    // Adjust byte order
+                                    ReverseByteArray(Response + 10, sizeof(MAC_ADDRESS));
 
-                            pRequest->TransferBufferLength = ARRAYSIZE(Response);
-                            RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
 
+                                    break;
+                                }
+                            default:
+                                break;
+                            }
                             break;
                         }
                     default:
                         break;
                     }
+
                     break;
                 }
-            default:
-                break;
-            }
-
-            break;
-        }
-    case HID_REQUEST_SET_REPORT:
-        {
-            UCHAR reportId = hid_get_report_id(pRequest);
-            UCHAR reportType = hid_get_report_type(pRequest);
-
-            TraceVerbose(
-                TRACE_USBPDO,
-                ">> >> >> >> SET_REPORT(%d): %d",
-                reportType, reportId);
-
-            switch (reportType)
-            {
-            case HID_REPORT_TYPE_FEATURE:
+            case HID_REQUEST_SET_REPORT:
                 {
-                    switch (reportId)
+                    UCHAR reportId = get_low_bytes(pRequest->Value); // 低位
+                    UCHAR reportType = get_high_bytes(pRequest->Value); // 高位
+
+                    TraceVerbose(
+                        TRACE_USBPDO,
+                        ">> >> >> >> SET_REPORT(%d): %d",
+                        reportType, reportId);
+
+                    switch (reportType)
                     {
-                    case HID_REPORT_ID_3:
+                    case HID_REPORT_TYPE_FEATURE:
                         {
-                            // Source: http://eleccelerator.com/wiki/index.php?title=DualShock_4#Class_Requests
-                            UCHAR Response[] =
+                            switch (reportId)
                             {
-                                0x13, 0xAC, 0x9E, 0x17, 0x94, 0x05, 0xB0, 0x56,
-                                0xE8, 0x81, 0x38, 0x08, 0x06, 0x51, 0x41, 0xC0,
-                                0x7F, 0x12, 0xAA, 0xD9, 0x66, 0x3C, 0xCE
-                            };
+                            case HID_REPORT_ID_3:
+                                {
+                                    // Source: http://eleccelerator.com/wiki/index.php?title=DualShock_4#Class_Requests
+                                    UCHAR Response[] =
+                                    {
+                                        0x13, 0xAC, 0x9E, 0x17, 0x94, 0x05, 0xB0, 0x56,
+                                        0xE8, 0x81, 0x38, 0x08, 0x06, 0x51, 0x41, 0xC0,
+                                        0x7F, 0x12, 0xAA, 0xD9, 0x66, 0x3C, 0xCE
+                                    };
 
-                            pRequest->TransferBufferLength = ARRAYSIZE(Response);
-                            RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
 
-                            break;
-                        }
-                    case HID_REPORT_ID_4:
-                        {
-                            // Source: http://eleccelerator.com/wiki/index.php?title=DualShock_4#Class_Requests
-                            UCHAR Response[] =
-                            {
-                                0x14, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                0x00
-                            };
+                                    break;
+                                }
+                            case HID_REPORT_ID_4:
+                                {
+                                    // Source: http://eleccelerator.com/wiki/index.php?title=DualShock_4#Class_Requests
+                                    UCHAR Response[] =
+                                    {
+                                        0x14, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00
+                                    };
 
-                            pRequest->TransferBufferLength = ARRAYSIZE(Response);
-                            RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
 
+                                    break;
+                                }
+                            default:
+                                break;
+                            }
                             break;
                         }
                     default:
                         break;
                     }
+
                     break;
                 }
             default:
                 break;
             }
-
             break;
         }
-    default:
-        break;
+    case 0x21:
+        {
+            switch (pRequest->Request)
+            {
+            case HID_REQUEST_GET_CUR:
+                {
+                    UCHAR channel = get_low_bytes(pRequest->Value); // 低位 Channel Number
+                    UCHAR feature = get_high_bytes(pRequest->Value); // 高位 Feature Unit Control Selector
+
+                    TraceVerbose(
+                        TRACE_USBPDO,
+                        ">> >> >> >> GET_CUR(%d): %d,Index: %d",
+                        channel, feature, pRequest->Index);
+                    switch (feature)
+                    {
+                    case 0x01: // MUTE_CONTROL 好像只在设备初始化的时候有查询？但最好后期也向用户态发起请求查询
+                        {
+                            UCHAR Response[] =
+                            {
+                                0x00 // False
+                            };
+
+                            pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                            RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                            break;
+                        }
+                    case 0x02: // VOLUME_CONTROL
+                        {
+                            switch (pRequest->Index)
+                            {
+                            case 0x0200: // 还不清楚定义，先抄
+                                {
+                                    UCHAR Response[] =
+                                    {
+                                        0x00, 0x9c // -100.0000 dB
+                                    };
+
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    break;
+                                }
+                            case 0x0500: // 很怪，没搞懂是什么，初始化以后后续没有相关数据？
+                                {
+                                    UCHAR Response[] =
+                                    {
+                                        0xe1, 0x0e // 14.8789 dB
+                                    };
+
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+            case HID_REQUEST_GET_MIN:
+                {
+                    UCHAR channel = get_low_bytes(pRequest->Value); // 低位 Channel Number
+                    UCHAR feature = get_high_bytes(pRequest->Value); // 高位 Feature Unit Control Selector
+
+                    TraceVerbose(
+                        TRACE_USBPDO,
+                        ">> >> >> >> GET_MIN(%d): %d,Index: %d",
+                        channel, feature, pRequest->Index);
+
+                    switch (feature)
+                    {
+                    case 0x02: // VOLUME_CONTROL
+                        {
+                            switch (pRequest->Index)
+                            {
+                            case 0x0200: // 还不清楚定义，先抄
+                                {
+                                    UCHAR Response[] =
+                                    {
+                                        0x00, 0x9c // -100.0000 dB
+                                    };
+
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    break;
+                                }
+                            case 0x0500: // 很怪，没搞懂是什么，初始化以后后续没有相关数据？
+                                {
+                                    UCHAR Response[] =
+                                    {
+                                        0x00, 0x00 // 0.0000 dB
+                                    };
+
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+            case HID_REQUEST_GET_MAX:
+                {
+                    UCHAR channel = get_low_bytes(pRequest->Value); // 低位 Channel Number
+                    UCHAR feature = get_high_bytes(pRequest->Value); // 高位 Feature Unit Control Selector
+
+                    TraceVerbose(
+                        TRACE_USBPDO,
+                        ">> >> >> >> GET_MAX(%d): %d,Index: %d",
+                        channel, feature, pRequest->Index);
+
+                    switch (feature)
+                    {
+                    case 0x02: // VOLUME_CONTROL
+                        {
+                            switch (pRequest->Index)
+                            {
+                            case 0x0200: // 还不清楚定义，先抄
+                                {
+                                    UCHAR Response[] =
+                                    {
+                                        0x00, 0x00 // 0.0000 dB
+                                    };
+
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    break;
+                                }
+                            case 0x0500: // 很怪，没搞懂是什么，初始化以后后续没有相关数据？
+                                {
+                                    UCHAR Response[] =
+                                    {
+                                        0x00, 0x30 // 48.0000 dB
+                                    };
+
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+            case HID_REQUEST_GET_RES:
+                {
+                    UCHAR channel = get_low_bytes(pRequest->Value); // 低位 Channel Number
+                    UCHAR feature = get_high_bytes(pRequest->Value); // 高位 Feature Unit Control Selector
+
+                    TraceVerbose(
+                        TRACE_USBPDO,
+                        ">> >> >> >> GET_RES(%d): %d,Index: %d",
+                        channel, feature, pRequest->Index);
+
+                    switch (feature)
+                    {
+                    case 0x02: // VOLUME_CONTROL
+                        {
+                            switch (pRequest->Index)
+                            {
+                            case 0x0200: // 还不清楚定义，先抄
+                                {
+                                    UCHAR Response[] =
+                                    {
+                                        0x00, 0x01 // 1.0000 dB
+                                    };
+
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    break;
+                                }
+                            case 0x0500: // 很怪，没搞懂是什么，初始化以后后续没有相关数据？
+                                {
+                                    UCHAR Response[] =
+                                    {
+                                        0x7a, 0x00 // 0.4766 dB
+                                    };
+
+                                    pRequest->TransferBufferLength = ARRAYSIZE(Response);
+                                    RtlCopyBytes(pRequest->TransferBuffer, Response, ARRAYSIZE(Response));
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+            case HID_REQUEST_SET_CUR:
+                {
+                    UCHAR channel = get_low_bytes(pRequest->Value); // 低位 Channel Number
+                    UCHAR feature = get_high_bytes(pRequest->Value); // 高位 Feature Unit Control Selector
+
+                    TraceVerbose(
+                        TRACE_USBPDO,
+                        ">> >> >> >> SET_CUR(%d): %d,Index: %d",
+                        channel, feature, pRequest->Index);
+
+                    // 传给用户态处理
+                    break;
+                }
+            default:
+                break;
+            }
+        }
     }
 
     return STATUS_SUCCESS;
@@ -1618,7 +1834,7 @@ void ViGEm::Bus::Targets::EmulationTargetDS4::ProcessPendingNotification(WDFQUEU
         if (!NT_SUCCESS(status))
         {
             //
-            // Don't requeue request as we maya be out of order now
+            // Don't requeue request as we may be out of order now
             // 
             WdfRequestComplete(request, status);
             continue;
@@ -1714,44 +1930,44 @@ VOID ViGEm::Bus::Targets::EmulationTargetDS4::SetOutputReportNotifyModule(DMFMOD
 NTSTATUS USB_BUSIFFN ViGEm::Bus::Targets::EmulationTargetDS4::UsbInterfaceSubmitIsoOutUrb(
     IN PVOID BusContext, IN PURB Urb)
 {
-    if (!Urb) 
+    if (!Urb)
         return STATUS_INVALID_PARAMETER;
-    
+
     // 获取 PDO 上下文
     auto pdo = static_cast<EmulationTargetDS4*>(BusContext);
-    
+
     // 检查是否是 Isochronous 传输
     if (Urb->UrbHeader.Function == URB_FUNCTION_ISOCH_TRANSFER)
     {
         auto isoUrb = &Urb->UrbIsochronousTransfer;
-        
+
         // 遍历所有 ISO 数据包
         for (ULONG i = 0; i < isoUrb->NumberOfPackets; i++)
         {
             PUSBD_ISO_PACKET_DESCRIPTOR packet = &isoUrb->IsoPacket[i];
-            
+
             if (packet->Length > 0)
             {
                 // 获取音频数据
                 PUCHAR audioData = (PUCHAR)isoUrb->TransferBuffer + packet->Offset;
                 ULONG audioDataLength = packet->Length;
-                
+
                 // 在这里处理音频数据:
                 // 1. 存储到缓冲区
                 // 2. 通知用户模式应用程序
                 // 3. 或转发到其他设备
-                
-                TraceVerbose(TRACE_DS4, 
-                    "Audio data received: %u bytes", 
-                    audioDataLength);
-                
+
+                TraceVerbose(TRACE_DS4,
+                             "Audio data received: %u bytes",
+                             audioDataLength);
+
                 // ProcessAudioData(pdo, audioData, audioDataLength);
             }
-            
+
             packet->Status = USBD_STATUS_SUCCESS;
         }
     }
-    
+
     Urb->UrbHeader.Status = USBD_STATUS_SUCCESS;
     return STATUS_SUCCESS;
 }

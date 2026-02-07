@@ -54,14 +54,14 @@ namespace ViGEm::Bus::Targets
 		UCHAR Nic2;
 	} MAC_ADDRESS, * PMAC_ADDRESS;
 
-	constexpr unsigned char hid_get_report_id(struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST* pReq)
+	constexpr unsigned char get_low_bytes(USHORT value)
 	{
-		return pReq->Value & 0xFF;
+		return value & 0xFF;
 	}
 
-	constexpr unsigned char hid_get_report_type(struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST* pReq)
+	constexpr unsigned char get_high_bytes(USHORT value)
 	{
-		return (pReq->Value >> 8) & 0xFF;
+		return (value >> 8) & 0xFF;
 	}
 
 	class EmulationTargetDS4 : public Core::EmulationTargetPDO
@@ -119,10 +119,16 @@ namespace ViGEm::Bus::Targets
 
 		static const int HID_REQUEST_GET_REPORT = 0x01;
 		static const int HID_REQUEST_SET_REPORT = 0x09;
+		static const int HID_REQUEST_GET_CUR = 0x81;
+		static const int HID_REQUEST_SET_CUR = 0x01;
+		static const int HID_REQUEST_GET_MIN = 0x82;
+		static const int HID_REQUEST_GET_MAX = 0x83;
+		static const int HID_REQUEST_GET_RES = 0x84;
 		static const int HID_REPORT_TYPE_FEATURE = 0x03;
 
-		static const int HID_REPORT_ID_0 = 0xA3;
-		static const int HID_REPORT_ID_1 = 0x02;
+		// Get Controller Version/Date (Firmware Info)
+		static const int HID_REPORT_FIRMWARE_INFO_ID = 0x20;
+		static const int HID_REPORT_HARDWARE_INFO_ID = 0x22;
 		static const int HID_REPORT_MAC_ADDRESSES_ID = 0x12;
 		static const int HID_REPORT_ID_3 = 0x13;
 		static const int HID_REPORT_ID_4 = 0x14;
