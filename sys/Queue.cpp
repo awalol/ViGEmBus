@@ -39,12 +39,12 @@
 
 #include "EmulationTargetPDO.hpp"
 #include "XusbPdo.hpp"
-#include "Ds4Pdo.hpp"
+#include "Ds5Pdo.hpp"
 
 using ViGEm::Bus::Core::PDO_IDENTIFICATION_DESCRIPTION;
 using ViGEm::Bus::Core::EmulationTargetPDO;
 using ViGEm::Bus::Targets::EmulationTargetXUSB;
-using ViGEm::Bus::Targets::EmulationTargetDS4;
+using ViGEm::Bus::Targets::EmulationTargetDS5;
 
 
 EXTERN_C_START
@@ -306,7 +306,7 @@ exit:
 }
 
 NTSTATUS
-Bus_Ds4SubmitReportHandler(
+Bus_Ds5SubmitReportHandler(
 	_In_ DMFMODULE DmfModule,
 	_In_ WDFQUEUE Queue,
 	_In_ WDFREQUEST Request,
@@ -329,12 +329,12 @@ Bus_Ds4SubmitReportHandler(
 
 	NTSTATUS status;
 	EmulationTargetPDO* pdo;
-	PDS4_SUBMIT_REPORT ds4Submit = (PDS4_SUBMIT_REPORT)InputBuffer;
+	PDS5_SUBMIT_REPORT ds5Submit = (PDS5_SUBMIT_REPORT)InputBuffer;
 
 	//
 		// Check if buffer is within expected bounds
 		// 
-	if (InputBufferSize != sizeof(DS4_SUBMIT_REPORT))
+	if (InputBufferSize != sizeof(DS5_SUBMIT_REPORT))
 	{
 		TraceVerbose(
 			TRACE_QUEUE,
@@ -349,12 +349,12 @@ Bus_Ds4SubmitReportHandler(
 	//
 	// Check if this makes sense before passing it on
 	// 
-	if (InputBufferSize != ds4Submit->Size)
+	if (InputBufferSize != ds5Submit->Size)
 	{
 		TraceVerbose(
 			TRACE_QUEUE,
 			"Invalid buffer size: %d",
-			ds4Submit->Size
+			ds5Submit->Size
 		);
 
 		status = STATUS_INVALID_BUFFER_SIZE;
@@ -364,7 +364,7 @@ Bus_Ds4SubmitReportHandler(
 	// 
 	// This request only supports a single PDO at a time
 	// 
-	if (ds4Submit->SerialNo == 0)
+	if (ds5Submit->SerialNo == 0)
 	{
 		TraceError(
 			TRACE_QUEUE,
@@ -374,10 +374,10 @@ Bus_Ds4SubmitReportHandler(
 		goto exit;
 	}
 
-	if (!EmulationTargetPDO::GetPdoByTypeAndSerial(WdfIoQueueGetDevice(Queue), DualShock4Wired, ds4Submit->SerialNo, &pdo))
+	if (!EmulationTargetPDO::GetPdoByTypeAndSerial(WdfIoQueueGetDevice(Queue), DualSense5Wired, ds5Submit->SerialNo, &pdo))
 		status = STATUS_DEVICE_DOES_NOT_EXIST;
 	else
-		status = pdo->SubmitReport(ds4Submit);
+		status = pdo->SubmitReport(ds5Submit);
 
 exit:
 	FuncExit(TRACE_QUEUE, "status=%!STATUS!", status);
@@ -386,7 +386,7 @@ exit:
 }
 
 NTSTATUS
-Bus_Ds4RequestNotificationHandler(
+Bus_Ds5RequestNotificationHandler(
 	_In_ DMFMODULE DmfModule,
 	_In_ WDFQUEUE Queue,
 	_In_ WDFREQUEST Request,
@@ -410,10 +410,10 @@ Bus_Ds4RequestNotificationHandler(
 
 	NTSTATUS status;
 	EmulationTargetPDO* pdo;
-	PDS4_REQUEST_NOTIFICATION ds4Notify = (PDS4_REQUEST_NOTIFICATION)InputBuffer;
+	PDS5_REQUEST_NOTIFICATION ds5Notify = (PDS5_REQUEST_NOTIFICATION)InputBuffer;
 
 	// This request only supports a single PDO at a time
-	if (ds4Notify->SerialNo == 0)
+	if (ds5Notify->SerialNo == 0)
 	{
 		TraceError(
 			TRACE_QUEUE,
@@ -423,7 +423,7 @@ Bus_Ds4RequestNotificationHandler(
 		goto exit;
 	}
 
-	if (!EmulationTargetPDO::GetPdoByTypeAndSerial(WdfIoQueueGetDevice(Queue), DualShock4Wired, ds4Notify->SerialNo, &pdo))
+	if (!EmulationTargetPDO::GetPdoByTypeAndSerial(WdfIoQueueGetDevice(Queue), DualSense5Wired, ds5Notify->SerialNo, &pdo))
 		status = STATUS_DEVICE_DOES_NOT_EXIST;
 	else
 	{
@@ -487,7 +487,7 @@ exit:
 }
 
 NTSTATUS
-Bus_Ds4AwaitOutputHandler(
+Bus_Ds5AwaitOutputHandler(
 	_In_ DMFMODULE DmfModule,
 	_In_ WDFQUEUE Queue,
 	_In_ WDFREQUEST Request,
@@ -529,7 +529,7 @@ exit:
 }
 
 NTSTATUS
-Bus_Ds4AwaitAudioHandler(
+Bus_Ds5AwaitAudioHandler(
 	_In_ DMFMODULE DmfModule,
 	_In_ WDFQUEUE Queue,
 	_In_ WDFREQUEST Request,

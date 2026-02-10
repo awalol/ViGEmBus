@@ -345,7 +345,7 @@ NTSTATUS ViGEm::Bus::Core::EmulationTargetPDO::PdoCreateDevice(WDFDEVICE ParentD
 		{
 			TraceEvents(
 				TRACE_LEVEL_ERROR,
-				TRACE_DS4,
+				TRACE_DS5,
 				"DMF_ModulesCreate failed with status %!STATUS!",
 				status
 			);

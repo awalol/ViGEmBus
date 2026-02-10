@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -45,7 +45,7 @@
     <ClInclude Include="CRTCPP.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Ds4Pdo.hpp">
+    <ClInclude Include="Ds5Pdo.hpp">
       <Filter>Header Files\Targets</Filter>
     </ClInclude>
     <ClInclude Include="Queue.hpp">
@@ -65,7 +65,7 @@
     <ClCompile Include="EmulationTargetPDO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Ds4Pdo.cpp">
+    <ClCompile Include="Ds5Pdo.cpp">
       <Filter>Source Files\Targets</Filter>
     </ClCompile>
     <ClCompile Include="buspdo.cpp">

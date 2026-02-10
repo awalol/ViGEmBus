@@ -19,7 +19,7 @@
 #pragma comment(lib, "setupapi.lib")
 
 //
-// DS4 Audio OUT format: 4-channel, 16-bit PCM, 48000 Hz
+// DS5 Audio OUT format: 4-channel, 16-bit PCM, 48000 Hz
 //
 static constexpr WORD  WAV_CHANNELS    = 4;
 static constexpr DWORD WAV_SAMPLE_RATE = 48000;
@@ -100,7 +100,7 @@ static BOOL WINAPI ConsoleCtrlHandler(DWORD ctrlType)
 	{
 		std::cout << "\n[App] Stopping... writing WAV file." << std::endl;
 		g_running = false;
-		WriteWavFile("ds4_audio_out.wav");
+		WriteWavFile("DS5_audio_out.wav");
 		ExitProcess(0);
 		return TRUE;
 	}
@@ -163,7 +163,7 @@ int main()
 
 	auto error = vigem_connect(client);
 
-	const auto ds = vigem_target_ds4_alloc();
+	const auto ds = vigem_target_DS5_alloc();
 
 	// busenum.cpp -> Bus_PlugInDevice
 	error = vigem_target_add(client, ds);
@@ -177,12 +177,12 @@ int main()
 	// 启动音频接收线程
 	std::thread audioThread([&client, &ds]()
 	{
-		DS4_AUDIO_BUFFER audioBuf;
+		DS5_AUDIO_BUFFER audioBuf;
 		ULONG audioPacketCount = 0;
 
 		while (g_running)
 		{
-			auto err = vigem_target_ds4_await_audio_data_timeout(client, ds, 500, &audioBuf);
+			auto err = vigem_target_DS5_await_audio_data_timeout(client, ds, 500, &audioBuf);
 
 			if (VIGEM_SUCCESS(err))
 			{
@@ -217,17 +217,17 @@ int main()
 	});
 	audioThread.detach();
 
-	std::cout << "[App] Recording audio to ds4_audio_out.wav. Press 'k' to send report, Ctrl+C to stop." << std::endl;
+	std::cout << "[App] Recording audio to DS5_audio_out.wav. Press 'k' to send report, Ctrl+C to stop." << std::endl;
 
-	DS4_OUTPUT_BUFFER out;
+	DS5_OUTPUT_BUFFER out;
 
 	while (TRUE) 
 	{
 		// 检测按键 'k' 发送报文
 		if (GetAsyncKeyState('K') & 0x8000)
 		{
-			DS4_REPORT report;
-			RtlZeroMemory(&report, sizeof(DS4_REPORT));
+			DS5_REPORT report;
+			RtlZeroMemory(&report, sizeof(DS5_REPORT));
 
 			// --- Sticks (0x00-0xFF, 0x80 = center) ---
 			report.bThumbLX = 0x7e;
@@ -243,7 +243,7 @@ int main()
 			report.bSeqNo = 0x59;
 
 			// --- Byte 7: DPad + face buttons ---
-			report.DPad = 0x8;            // DS4_BUTTON_DPAD_NONE
+			report.DPad = 0x8;            // DS5_BUTTON_DPAD_NONE
 			report.ButtonSquare = 0;
 			report.ButtonCross = 0;
 			report.ButtonCircle = 0;
@@ -260,9 +260,9 @@ int main()
 			report.ButtonR3 = 0;
 
 			// --- Byte 9: special buttons ---
-			report.ButtonHome = 1;
-			report.ButtonPad = 1;
-			report.ButtonMute = 1;
+			report.ButtonHome = 0;
+			report.ButtonPad = 0;
+			report.ButtonMute = 0;
 			report.UNK1 = 0;
 			report.ButtonLeftFunction = 0;
 			report.ButtonRightFunction = 0;
@@ -345,22 +345,22 @@ int main()
 			report.bAesCmac[6] = 0x75;
 			report.bAesCmac[7] = 0x3D;
 
-			error = vigem_target_ds4_update(client, ds, report);
+			error = vigem_target_DS5_update(client, ds, report);
 			if (VIGEM_SUCCESS(error))
-				std::cout << "[App] DS4 report sent successfully." << std::endl;
+				std::cout << "[App] DS5 report sent successfully." << std::endl;
 			else
-				std::cerr << "[App] Failed to send DS4 report." << std::endl;
+				std::cerr << "[App] Failed to send DS5 report." << std::endl;
 
 			// 防止连续触发
 			Sleep(200);
 		}
 
-		//error = vigem_target_ds4_await_output_report(client, ds4, &out);
-		error = vigem_target_ds4_await_output_report_timeout(client, ds, 100, &out);
+		//error = vigem_target_DS5_await_output_report(client, ds5, &out);
+		error = vigem_target_DS5_await_output_report_timeout(client, ds, 100, &out);
 		
 		if (VIGEM_SUCCESS(error))
 		{
-			std::cout << hexStr(out.Buffer, sizeof(DS4_OUTPUT_BUFFER)) << std::endl;
+			std::cout << hexStr(out.Buffer, sizeof(DS5_OUTPUT_BUFFER)) << std::endl;
 		}
 		else if (error != VIGEM_ERROR_TIMED_OUT)
 		{

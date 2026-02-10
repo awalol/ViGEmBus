@@ -49,12 +49,12 @@
 #include "Queue.hpp"
 #include "EmulationTargetPDO.hpp"
 #include "XusbPdo.hpp"
-#include "Ds4Pdo.hpp"
+#include "Ds5Pdo.hpp"
 
 using ViGEm::Bus::Core::PDO_IDENTIFICATION_DESCRIPTION;
 using ViGEm::Bus::Core::EmulationTargetPDO;
 using ViGEm::Bus::Targets::EmulationTargetXUSB;
-using ViGEm::Bus::Targets::EmulationTargetDS4;
+using ViGEm::Bus::Targets::EmulationTargetDS5;
 
 
 EXTERN_C_START
@@ -67,11 +67,11 @@ IoctlHandler_IoctlRecord ViGEmBus_IoctlSpecification[] =
 	{IOCTL_VIGEM_UNPLUG_TARGET, sizeof(VIGEM_UNPLUG_TARGET), 0, Bus_UnplugTargetHandler},
 	{IOCTL_XUSB_SUBMIT_REPORT, sizeof(XUSB_SUBMIT_REPORT), 0, Bus_XusbSubmitReportHandler},
 	{IOCTL_XUSB_REQUEST_NOTIFICATION, sizeof(XUSB_REQUEST_NOTIFICATION), sizeof(XUSB_REQUEST_NOTIFICATION), Bus_XusbRequestNotificationHandler},
-	{IOCTL_DS4_SUBMIT_REPORT, sizeof(DS4_SUBMIT_REPORT), 0, Bus_Ds4SubmitReportHandler},
-	{IOCTL_DS4_REQUEST_NOTIFICATION, sizeof(DS4_REQUEST_NOTIFICATION), sizeof(DS4_REQUEST_NOTIFICATION), Bus_Ds4RequestNotificationHandler},
+	{IOCTL_DS5_SUBMIT_REPORT, sizeof(DS5_SUBMIT_REPORT), 0, Bus_Ds5SubmitReportHandler},
+	{IOCTL_DS5_REQUEST_NOTIFICATION, sizeof(DS5_REQUEST_NOTIFICATION), sizeof(DS5_REQUEST_NOTIFICATION), Bus_Ds5RequestNotificationHandler},
 	{IOCTL_XUSB_GET_USER_INDEX, sizeof(XUSB_GET_USER_INDEX), sizeof(XUSB_GET_USER_INDEX), Bus_XusbGetUserIndexHandler},
-	{IOCTL_DS4_AWAIT_OUTPUT_AVAILABLE, sizeof(DS4_AWAIT_OUTPUT), sizeof(DS4_AWAIT_OUTPUT), Bus_Ds4AwaitOutputHandler},
-	{IOCTL_DS4_AWAIT_AUDIO_DATA, sizeof(DS4_AUDIO_DATA), sizeof(DS4_AUDIO_DATA), Bus_Ds4AwaitAudioHandler},
+	{IOCTL_DS5_AWAIT_OUTPUT_AVAILABLE, sizeof(DS5_AWAIT_OUTPUT), sizeof(DS5_AWAIT_OUTPUT), Bus_Ds5AwaitOutputHandler},
+	{IOCTL_DS5_AWAIT_AUDIO_DATA, sizeof(DS5_AUDIO_DATA), sizeof(DS5_AUDIO_DATA), Bus_Ds5AwaitAudioHandler},
 };
 
 //
@@ -344,7 +344,7 @@ DmfDeviceModulesAdd(
 	DMF_CONFIG_NotifyUserWithRequestMultiple_AND_ATTRIBUTES_INIT(&notifyConfig, &moduleAttributes);
 
 	notifyConfig.MaximumNumberOfPendingRequests = 64 * 2;
-	notifyConfig.SizeOfDataBuffer = sizeof(DS4_AWAIT_OUTPUT);
+	notifyConfig.SizeOfDataBuffer = sizeof(DS5_AWAIT_OUTPUT);
 	notifyConfig.MaximumNumberOfPendingDataBuffers = 64;
 	notifyConfig.ModeType.Modes.ReplayLastMessageToNewClients = FALSE;
 	notifyConfig.CompletionCallback = Bus_EvtUserNotifyRequestComplete;
@@ -364,7 +364,7 @@ DmfDeviceModulesAdd(
 	DMF_CONFIG_NotifyUserWithRequestMultiple_AND_ATTRIBUTES_INIT(&audioNotifyConfig, &audioModuleAttributes);
 
 	audioNotifyConfig.MaximumNumberOfPendingRequests = 64 * 2;
-	audioNotifyConfig.SizeOfDataBuffer = sizeof(DS4_AUDIO_DATA);
+	audioNotifyConfig.SizeOfDataBuffer = sizeof(DS5_AUDIO_DATA);
 	audioNotifyConfig.MaximumNumberOfPendingDataBuffers = 64;
 	audioNotifyConfig.ModeType.Modes.ReplayLastMessageToNewClients = FALSE;
 	audioNotifyConfig.CompletionCallback = Bus_EvtAudioNotifyRequestComplete;
@@ -595,21 +595,21 @@ void Bus_EvtUserNotifyRequestComplete(
 
 	UNREFERENCED_PARAMETER(DmfModule);
 
-	auto pOutput = reinterpret_cast<PDS4_AWAIT_OUTPUT>(Context);
-	PDS4_AWAIT_OUTPUT pNotify = NULL;
+	auto pOutput = reinterpret_cast<PDS5_AWAIT_OUTPUT>(Context);
+	PDS5_AWAIT_OUTPUT pNotify = NULL;
 	size_t length = 0;
 
 	if (NT_SUCCESS(WdfRequestRetrieveOutputBuffer(
 		Request,
-		sizeof(DS4_AWAIT_OUTPUT),
+		sizeof(DS5_AWAIT_OUTPUT),
 		reinterpret_cast<PVOID*>(&pNotify),
 		&length)))
 	{
-		RtlCopyMemory(pNotify, pOutput, sizeof(DS4_AWAIT_OUTPUT));
+		RtlCopyMemory(pNotify, pOutput, sizeof(DS5_AWAIT_OUTPUT));
 
-		Util_DumpAsHex("NOTIFY_COMPLETE", pNotify, sizeof(DS4_AWAIT_OUTPUT));
+		Util_DumpAsHex("NOTIFY_COMPLETE", pNotify, sizeof(DS5_AWAIT_OUTPUT));
 
-		WdfRequestSetInformation(Request, sizeof(DS4_AWAIT_OUTPUT));
+		WdfRequestSetInformation(Request, sizeof(DS5_AWAIT_OUTPUT));
 	}
 
 	WdfRequestComplete(Request, NtStatus);
@@ -628,19 +628,19 @@ void Bus_EvtAudioNotifyRequestComplete(
 
 	UNREFERENCED_PARAMETER(DmfModule);
 
-	auto pOutput = reinterpret_cast<PDS4_AUDIO_DATA>(Context);
-	PDS4_AUDIO_DATA pNotify = NULL;
+	auto pOutput = reinterpret_cast<PDS5_AUDIO_DATA>(Context);
+	PDS5_AUDIO_DATA pNotify = NULL;
 	size_t length = 0;
 
 	if (NT_SUCCESS(WdfRequestRetrieveOutputBuffer(
 		Request,
-		sizeof(DS4_AUDIO_DATA),
+		sizeof(DS5_AUDIO_DATA),
 		reinterpret_cast<PVOID*>(&pNotify),
 		&length)))
 	{
-		RtlCopyMemory(pNotify, pOutput, sizeof(DS4_AUDIO_DATA));
+		RtlCopyMemory(pNotify, pOutput, sizeof(DS5_AUDIO_DATA));
 
-		WdfRequestSetInformation(Request, sizeof(DS4_AUDIO_DATA));
+		WdfRequestSetInformation(Request, sizeof(DS5_AUDIO_DATA));
 	}
 
 	WdfRequestComplete(Request, NtStatus);
