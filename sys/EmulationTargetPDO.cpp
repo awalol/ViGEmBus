@@ -629,13 +629,47 @@ NTSTATUS USB_BUSIFFN ViGEm::Bus::Core::EmulationTargetPDO::UsbInterfaceSubmitIso
 	return STATUS_SUCCESS;
 }
 
+NTSTATUS ViGEm::Bus::Core::EmulationTargetPDO::UsbIsochronousTransfer(PURB Urb, WDFREQUEST Request)
+{
+	if (Urb == nullptr)
+		return STATUS_INVALID_PARAMETER;
+
+	if (Urb->UrbHeader.Length >= sizeof(Urb->UrbIsochronousTransfer))
+	{
+		auto isoUrb = &Urb->UrbIsochronousTransfer;
+
+		for (ULONG index = 0; index < isoUrb->NumberOfPackets; ++index)
+		{
+			isoUrb->IsoPacket[index].Status = USBD_STATUS_SUCCESS;
+		}
+	}
+
+	Urb->UrbHeader.Status = USBD_STATUS_SUCCESS;
+
+	return STATUS_SUCCESS;
+}
+
 NTSTATUS USB_BUSIFFN ViGEm::Bus::Core::EmulationTargetPDO::UsbInterfaceQueryBusTime(
 	IN PVOID BusContext, IN OUT PULONG CurrentUsbFrame)
 {
 	UNREFERENCED_PARAMETER(BusContext);
-	UNREFERENCED_PARAMETER(CurrentUsbFrame);
 
-	return STATUS_UNSUCCESSFUL;
+	if (CurrentUsbFrame != nullptr)
+	{
+		//
+		// USB 2.0 frame number increments every 1ms.
+		// Derive from actual wall-clock time so USBAudio can
+		// synchronize isochronous transfers correctly.
+		//
+		LARGE_INTEGER perfFreq;
+		LARGE_INTEGER perfCount = KeQueryPerformanceCounter(&perfFreq);
+
+		*CurrentUsbFrame = static_cast<ULONG>(
+			(perfCount.QuadPart * 1000) / perfFreq.QuadPart
+		);
+	}
+
+	return STATUS_SUCCESS;
 }
 
 VOID USB_BUSIFFN ViGEm::Bus::Core::EmulationTargetPDO::UsbInterfaceGetUSBDIVersion(IN PVOID BusContext,
@@ -1006,7 +1040,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 		{
 		case URB_FUNCTION_CONTROL_TRANSFER:
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_CONTROL_TRANSFER");
 
@@ -1016,7 +1050,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_CONTROL_TRANSFER_EX:
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_CONTROL_TRANSFER_EX");
 
@@ -1034,9 +1068,19 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 			break;
 
+		case URB_FUNCTION_ISOCH_TRANSFER:
+
+			TraceInformation(
+				TRACE_BUSPDO,
+				">> >> URB_FUNCTION_ISOCH_TRANSFER");
+
+			status = ctx->Target->UsbIsochronousTransfer(urb, Request);
+
+			break;
+
 		case URB_FUNCTION_SELECT_CONFIGURATION:
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_SELECT_CONFIGURATION");
 
@@ -1046,7 +1090,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_SELECT_INTERFACE:
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_SELECT_INTERFACE");
 
@@ -1056,7 +1100,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE:
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE");
 
@@ -1064,7 +1108,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 			{
 			case USB_DEVICE_DESCRIPTOR_TYPE:
 
-				TraceVerbose(
+				TraceInformation(
 					TRACE_BUSPDO,
 					">> >> >> USB_DEVICE_DESCRIPTOR_TYPE");
 
@@ -1075,7 +1119,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 			case USB_CONFIGURATION_DESCRIPTOR_TYPE:
 
-				TraceVerbose(
+				TraceInformation(
 					TRACE_BUSPDO,
 					">> >> >> USB_CONFIGURATION_DESCRIPTOR_TYPE");
 
@@ -1085,7 +1129,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 			case USB_STRING_DESCRIPTOR_TYPE:
 
-				TraceVerbose(
+				TraceInformation(
 					TRACE_BUSPDO,
 					">> >> >> USB_STRING_DESCRIPTOR_TYPE");
 
@@ -1095,14 +1139,14 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 			default:
 
-				TraceVerbose(
+				TraceInformation(
 					TRACE_BUSPDO,
 					">> >> >> Unknown descriptor type");
 
 				break;
 			}
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				"<< <<");
 
@@ -1110,7 +1154,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_GET_STATUS_FROM_DEVICE:
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_GET_STATUS_FROM_DEVICE");
 
@@ -1121,17 +1165,19 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_ABORT_PIPE:
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_ABORT_PIPE");
 
 			ctx->Target->UsbAbortPipe();
+			
+			status = STATUS_SUCCESS;
 
 			break;
 
 		case URB_FUNCTION_CLASS_INTERFACE:
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_CLASS_INTERFACE");
 
@@ -1141,17 +1187,28 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_GET_DESCRIPTOR_FROM_INTERFACE:
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_GET_DESCRIPTOR_FROM_INTERFACE");
 
 			status = ctx->Target->UsbGetDescriptorFromInterface(urb);
 
 			break;
+			
+		case URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL:
+			// 就因为这玩意没处理卡我好几天，现象：播放器播不动，进度条不走
+			
+			TraceInformation(
+				TRACE_BUSPDO,
+				">> >> URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL");
+			
+			status = STATUS_SUCCESS;
+			
+			break;
 
 		default:
 
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >>  Unknown function: 0x%X",
 				urb->UrbHeader.Function);
@@ -1203,7 +1260,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 	default:
 
-		TraceVerbose(
+		TraceInformation(
 			TRACE_BUSPDO,
 			">> Unknown I/O control code 0x%X",
 			IoControlCode);

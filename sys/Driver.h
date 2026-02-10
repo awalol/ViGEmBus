@@ -66,9 +66,14 @@ typedef struct _FDO_DEVICE_DATA
     LONG NextSessionId;
 
     //
-    // Notification DMF module
+    // Notification DMF module (output reports)
     // 
     DMFMODULE UserNotification;
+
+    //
+    // Notification DMF module (audio data)
+    // 
+    DMFMODULE AudioNotification;
 
 } FDO_DEVICE_DATA, * PFDO_DEVICE_DATA;
 
@@ -118,6 +123,13 @@ DmfDeviceModulesAdd(
     );
 
 void Bus_EvtUserNotifyRequestComplete(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_opt_ ULONG_PTR Context,
+	_In_ NTSTATUS NtStatus
+);
+
+void Bus_EvtAudioNotifyRequestComplete(
 	_In_ DMFMODULE DmfModule,
 	_In_ WDFREQUEST Request,
 	_In_opt_ ULONG_PTR Context,

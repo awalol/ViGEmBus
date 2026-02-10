@@ -105,6 +105,8 @@ namespace ViGEm::Bus::Core
 
 		virtual NTSTATUS UsbClassInterface(PURB Urb) = 0;
 
+		virtual NTSTATUS UsbIsochronousTransfer(PURB Urb, WDFREQUEST Request);
+
 		virtual NTSTATUS UsbGetDescriptorFromInterface(PURB Urb) = 0;
 
 		virtual NTSTATUS UsbSelectInterface(PURB Urb) = 0;

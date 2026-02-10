@@ -87,6 +87,8 @@ namespace ViGEm::Bus::Targets
 
 		NTSTATUS UsbClassInterface(PURB Urb) override;
 
+		NTSTATUS UsbIsochronousTransfer(PURB Urb, WDFREQUEST Request) override;
+
 		NTSTATUS UsbGetDescriptorFromInterface(PURB Urb) override;
 
 		NTSTATUS UsbSelectInterface(PURB Urb) override;
@@ -101,10 +103,13 @@ namespace ViGEm::Bus::Targets
 
 		VOID SetOutputReportNotifyModule(DMFMODULE Module);
 
+		VOID SetAudioNotifyModule(DMFMODULE Module);
+
 		static NTSTATUS USB_BUSIFFN UsbInterfaceSubmitIsoOutUrb(IN PVOID BusContext, IN PURB Urb);
 
 	private:
 		static EVT_WDF_TIMER PendingUsbRequestsTimerFunc;
+		static EVT_WDF_TIMER PendingIsoOutTimerFunc;
 
 		static VOID ReverseByteArray(PUCHAR Array, INT Length);
 
@@ -146,7 +151,14 @@ namespace ViGEm::Bus::Targets
 		static const int DS4_OUTPUT_BUFFER_LENGTH = 0x05;
 
 		static const int DS4_REPORT_SIZE = 0x40;
-		static const int DS4_QUEUE_FLUSH_PERIOD = 0x05;
+		static const int DS4_QUEUE_FLUSH_PERIOD = 0x06;
+
+		//
+		// ISO OUT completion delay period in milliseconds.
+		// Real USB hardware takes ~10-20ms to complete an isochronous OUT URB.
+		// This throttles USBAudio's submission rate to match real-time audio flow.
+		//
+		static const int DS4_ISO_OUT_COMPLETION_PERIOD_MS = 10;
 
 		//
 		// HID Input Report buffer
@@ -164,6 +176,14 @@ namespace ViGEm::Bus::Targets
 		WDFTIMER _PendingUsbInRequestsTimer;
 
 		//
+		// Queue and timer for delayed ISO OUT URB completion.
+		// Simulates real USB isochronous transfer timing to prevent
+		// USBAudio from draining the audio buffer faster than real-time.
+		//
+		WDFQUEUE _PendingIsoOutRequests{};
+		WDFTIMER _PendingIsoOutTimer{};
+
+		//
 		// Auto-generated MAC address of the target device
 		//
 		MAC_ADDRESS _TargetMacAddress;
@@ -179,8 +199,24 @@ namespace ViGEm::Bus::Targets
 		DMFMODULE _OutputReportNotify;
 
 		//
+		// User-mode notification on new audio data
+		// 
+		DMFMODULE _AudioNotify;
+
+		//
 		// Memory for full output report request
 		// 
 		DS4_AWAIT_OUTPUT _AwaitOutputCache;
+
+		//
+		// Memory for audio data notification
+		//
+		DS4_AUDIO_DATA _AudioCache;
+
+		// Cached audio feature values
+		UCHAR _AudioMute0200[1]{0x00};
+		UCHAR _AudioMute0500[1]{0x00};
+		UCHAR _Volume0200[2]{0x00, 0x00};
+		UCHAR _Volume0500[2]{0xe1, 0x0e};
 	};
 }

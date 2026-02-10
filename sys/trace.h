@@ -70,6 +70,8 @@
 #define WPP_LEVEL_FLAGS_ENABLED(lvl, flags) \
            (WPP_LEVEL_ENABLED(flags) && WPP_CONTROL(WPP_BIT_ ## flags).Level >= lvl)
 
+#define WPP_RECORDER_LEVEL_FLAGS_FILTER(lvl, flags) (TRUE)
+
 //
 // This comment block is scanned by the trace preprocessor to define our
 // Trace function.

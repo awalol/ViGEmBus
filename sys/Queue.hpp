@@ -47,5 +47,6 @@ EVT_DMF_IoctlHandler_Callback Bus_Ds4SubmitReportHandler;
 EVT_DMF_IoctlHandler_Callback Bus_Ds4RequestNotificationHandler;
 EVT_DMF_IoctlHandler_Callback Bus_XusbGetUserIndexHandler;
 EVT_DMF_IoctlHandler_Callback Bus_Ds4AwaitOutputHandler;
+EVT_DMF_IoctlHandler_Callback Bus_Ds4AwaitAudioHandler;
 
 EXTERN_C_END

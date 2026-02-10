@@ -71,6 +71,7 @@ IoctlHandler_IoctlRecord ViGEmBus_IoctlSpecification[] =
 	{IOCTL_DS4_REQUEST_NOTIFICATION, sizeof(DS4_REQUEST_NOTIFICATION), sizeof(DS4_REQUEST_NOTIFICATION), Bus_Ds4RequestNotificationHandler},
 	{IOCTL_XUSB_GET_USER_INDEX, sizeof(XUSB_GET_USER_INDEX), sizeof(XUSB_GET_USER_INDEX), Bus_XusbGetUserIndexHandler},
 	{IOCTL_DS4_AWAIT_OUTPUT_AVAILABLE, sizeof(DS4_AWAIT_OUTPUT), sizeof(DS4_AWAIT_OUTPUT), Bus_Ds4AwaitOutputHandler},
+	{IOCTL_DS4_AWAIT_AUDIO_DATA, sizeof(DS4_AUDIO_DATA), sizeof(DS4_AUDIO_DATA), Bus_Ds4AwaitAudioHandler},
 };
 
 //
@@ -355,6 +356,26 @@ DmfDeviceModulesAdd(
 		&pDevCtx->UserNotification
 	);
 
+	//
+	// Audio notification DMF module
+	//
+	DMF_CONFIG_NotifyUserWithRequestMultiple audioNotifyConfig;
+	DMF_MODULE_ATTRIBUTES audioModuleAttributes;
+	DMF_CONFIG_NotifyUserWithRequestMultiple_AND_ATTRIBUTES_INIT(&audioNotifyConfig, &audioModuleAttributes);
+
+	audioNotifyConfig.MaximumNumberOfPendingRequests = 64 * 2;
+	audioNotifyConfig.SizeOfDataBuffer = sizeof(DS4_AUDIO_DATA);
+	audioNotifyConfig.MaximumNumberOfPendingDataBuffers = 64;
+	audioNotifyConfig.ModeType.Modes.ReplayLastMessageToNewClients = FALSE;
+	audioNotifyConfig.CompletionCallback = Bus_EvtAudioNotifyRequestComplete;
+
+	DMF_DmfModuleAdd(
+		DmfModuleInit,
+		&audioModuleAttributes,
+		WDF_NO_OBJECT_ATTRIBUTES,
+		&pDevCtx->AudioNotification
+	);
+
 	FuncExitNoReturn(TRACE_DRIVER);
 }
 #pragma code_seg()
@@ -589,6 +610,37 @@ void Bus_EvtUserNotifyRequestComplete(
 		Util_DumpAsHex("NOTIFY_COMPLETE", pNotify, sizeof(DS4_AWAIT_OUTPUT));
 
 		WdfRequestSetInformation(Request, sizeof(DS4_AWAIT_OUTPUT));
+	}
+
+	WdfRequestComplete(Request, NtStatus);
+
+	FuncExit(TRACE_DRIVER, "status=%!STATUS!", NtStatus);
+}
+
+void Bus_EvtAudioNotifyRequestComplete(
+	_In_ DMFMODULE DmfModule,
+	_In_ WDFREQUEST Request,
+	_In_opt_ ULONG_PTR Context,
+	_In_ NTSTATUS NtStatus
+)
+{
+	FuncEntry(TRACE_DRIVER);
+
+	UNREFERENCED_PARAMETER(DmfModule);
+
+	auto pOutput = reinterpret_cast<PDS4_AUDIO_DATA>(Context);
+	PDS4_AUDIO_DATA pNotify = NULL;
+	size_t length = 0;
+
+	if (NT_SUCCESS(WdfRequestRetrieveOutputBuffer(
+		Request,
+		sizeof(DS4_AUDIO_DATA),
+		reinterpret_cast<PVOID*>(&pNotify),
+		&length)))
+	{
+		RtlCopyMemory(pNotify, pOutput, sizeof(DS4_AUDIO_DATA));
+
+		WdfRequestSetInformation(Request, sizeof(DS4_AUDIO_DATA));
 	}
 
 	WdfRequestComplete(Request, NtStatus);
