@@ -37,27 +37,28 @@ static constexpr WORD  WAV_BLOCK_ALIGN = WAV_CHANNELS * (WAV_BITS / 8); // 8 byt
 static constexpr DWORD WAV_BYTE_RATE   = WAV_SAMPLE_RATE * WAV_BLOCK_ALIGN;
 
 // 音频录制状态
-static std::mutex              g_audioMutex;
-static std::vector<UCHAR>      g_audioData;
-static std::atomic<bool>       g_running{ true };
+static mutex              g_audioMutex;
+static mutex              g_hidMutex;
+static vector<UCHAR>      g_audioData;
+static atomic<bool>       g_running{ true };
 
 //
 // 写WAV文件（在程序退出时调用）
 //
 static void WriteWavFile(const char* filename)
 {
-	std::lock_guard<std::mutex> lock(g_audioMutex);
+	lock_guard<mutex> lock(g_audioMutex);
 
 	if (g_audioData.empty())
 	{
-		std::cout << "[WAV] No audio data captured, skipping WAV output." << std::endl;
+		cout << "[WAV] No audio data captured, skipping WAV output." << endl;
 		return;
 	}
 
-	std::ofstream file(filename, std::ios::binary);
+	ofstream file(filename, ios::binary);
 	if (!file.is_open())
 	{
-		std::cerr << "[WAV] Failed to open " << filename << " for writing." << std::endl;
+		cerr << "[WAV] Failed to open " << filename << " for writing." << endl;
 		return;
 	}
 
@@ -94,10 +95,10 @@ static void WriteWavFile(const char* filename)
 	file.close();
 
 	const double durationSec = static_cast<double>(dataSize) / WAV_BYTE_RATE;
-	std::cout << "[WAV] Saved " << filename 
+	cout << "[WAV] Saved " << filename 
 	          << " (" << dataSize << " bytes, "
-	          << std::fixed << std::setprecision(2) << durationSec << "s)"
-	          << std::endl;
+	          << fixed << setprecision(2) << durationSec << "s)"
+	          << endl;
 }
 
 //
@@ -110,10 +111,11 @@ static BOOL WINAPI ConsoleCtrlHandler(DWORD ctrlType)
 		if (device)
 		{
 			cout << "Closing HIDAPI..." << endl;
+			lock_guard<mutex> lock(g_hidMutex);
 			hid_close(device);
 			hid_exit();
 		}
-		std::cout << "\n[App] Stopping... writing WAV file." << std::endl;
+		cout << "\n[App] Stopping... writing WAV file." << endl;
 		g_running = false;
 		WriteWavFile("DS5_audio_out.wav");
 		ExitProcess(0);
@@ -122,16 +124,16 @@ static BOOL WINAPI ConsoleCtrlHandler(DWORD ctrlType)
 	return FALSE;
 }
 
-static std::string hexStr(unsigned char* data, int len)
+static string hexStr(unsigned char* data, int len)
 {
-	std::stringstream ss;
-	ss << std::hex;
+	stringstream ss;
+	ss << hex;
 	for (int i = 0; i < len; ++i)
-		ss << std::setw(2) << std::setfill('0') << static_cast<int>(data[i]) << ' ';
+		ss << setw(2) << setfill('0') << static_cast<int>(data[i]) << ' ';
 	return ss.str();
 }
 
-static std::wstring Win32ErrorToString(DWORD error)
+static wstring Win32ErrorToString(DWORD error)
 {
 	if (error == 0)
 		return L"No error (0)";
@@ -155,11 +157,11 @@ static std::wstring Win32ErrorToString(DWORD error)
 	if (len == 0)
 	{
 		DWORD fmErr = ::GetLastError();
-		return L"FormatMessageW failed. error=" + std::to_wstring(fmErr) +
-			   L", original error=" + std::to_wstring(error);
+		return L"FormatMessageW failed. error=" + to_wstring(fmErr) +
+			   L", original error=" + to_wstring(error);
 	}
 
-	std::wstring msg(buffer, len);
+	wstring msg(buffer, len);
 	::LocalFree(buffer);
 
 	// 去掉系统消息末尾常见的 \r\n
@@ -230,8 +232,6 @@ int main()
 	
 	hid_set_nonblocking(device,1);
 	
-	unsigned char buf[78];
-
 	const auto client = vigem_alloc();
 
 	auto error = vigem_connect(client);
@@ -243,12 +243,12 @@ int main()
 	if (!VIGEM_SUCCESS(error))
 	{
 		DWORD win32 = ::GetLastError();
-		std::wcerr << L"vigem_target_add failed. GetLastError="
+		wcerr << L"vigem_target_add failed. GetLastError="
 				   << win32 << L" (" << Win32ErrorToString(win32) << L")\n";
 	}
 
 	// 启动音频接收线程
-	std::thread audioThread([&client, &ds]()
+	thread audioThread([&client, &ds]()
 	{
 		DS5_AUDIO_BUFFER audioBuf;
 		ULONG audioPacketCount = 0;
@@ -263,7 +263,7 @@ int main()
 
 				// 将音频数据追加到全局缓冲区
 				{
-					std::lock_guard<std::mutex> lock(g_audioMutex);
+					lock_guard<mutex> lock(g_audioMutex);
 					g_audioData.insert(g_audioData.end(),
 					                   audioBuf.AudioData,
 					                   audioBuf.AudioData + audioBuf.AudioDataLength);
@@ -273,24 +273,65 @@ int main()
 				{
 					double sec;
 					{
-						std::lock_guard<std::mutex> lock(g_audioMutex);
+						lock_guard<mutex> lock(g_audioMutex);
 						sec = static_cast<double>(g_audioData.size()) / WAV_BYTE_RATE;
 					}
-					std::cout << "[Audio] " << audioPacketCount << " packets received, "
-					          << std::fixed << std::setprecision(2) << sec << "s recorded"
-					          << std::endl;
+					cout << "[Audio] " << audioPacketCount << " packets received, "
+					          << fixed << setprecision(2) << sec << "s recorded"
+					          << endl;
 				}
 			}
 			else if (err != VIGEM_ERROR_TIMED_OUT)
 			{
-				std::cerr << "[Audio] Error receiving audio data" << std::endl;
+				cerr << "[Audio] Error receiving audio data" << endl;
 				break;
 			}
 		}
 	});
 	audioThread.detach();
+	thread proxyThread([&client, &ds](){
+		unsigned char buf[78];
+		while (g_running)
+		{
+			int read = 0;
+			{
+				lock_guard<mutex> lock(g_hidMutex);
+				read = hid_read(device, buf, sizeof(buf));
+			}
+			if (read > 1)
+			{
+				switch (buf[0])
+				{
+				case 0x31:
+					{
+						// cout << "Receive Input Report: " << hexStr(buf,78) << endl;
+						DS5_REPORT report;
+						RtlZeroMemory(&report, sizeof(DS5_REPORT));
+						RtlCopyMemory(&report,buf + 2,sizeof(DS5_REPORT));
+			
+						auto error = vigem_target_DS5_update(client, ds, report);
+						if (!VIGEM_SUCCESS(error))
+						{
+							cerr << "[App] Failed to send DS5 report." << endl;
+						}
+						break;
+					}
+				case 0x01:
+					{
+						cout << "Receive 0x01 Input Report: " << hexStr(buf,63) << endl;
+					}
+				}
+			}
+			else if (read < 0)
+			{
+				lock_guard<mutex> lock(g_hidMutex);
+				cerr << "HID READ ERROR: " << hid_read_error(device) << endl;
+			}
+		}
+	});
+	proxyThread.detach();
 
-	std::cout << "[App] Recording audio to DS5_audio_out.wav. Press 'k' to send report, Ctrl+C to stop." << std::endl;
+	cout << "[App] Recording audio to DS5_audio_out.wav. Press 'k' to send report, Ctrl+C to stop." << endl;
 
 	DS5_OUTPUT_BUFFER out;
 	int outputSeq = 0;
@@ -422,40 +463,12 @@ int main()
 
 			error = vigem_target_DS5_update(client, ds, report);
 			if (VIGEM_SUCCESS(error))
-				std::cout << "[App] DS5 report sent successfully." << std::endl;
+				cout << "[App] DS5 report sent successfully." << endl;
 			else
-				std::cerr << "[App] Failed to send DS5 report." << std::endl;
+				cerr << "[App] Failed to send DS5 report." << endl;
 
 			// 防止连续触发
 			Sleep(200);
-		}
-		int read = hid_read(device, buf, sizeof(buf));
-		if (read > 1)
-		{
-			switch (buf[0])
-			{
-			case 0x31:
-				{
-					// cout << "Receive Input Report: " << hexStr(buf,78) << endl;
-					DS5_REPORT report;
-					RtlZeroMemory(&report, sizeof(DS5_REPORT));
-					RtlCopyMemory(&report,buf + 2,sizeof(DS5_REPORT));
-			
-					error = vigem_target_DS5_update(client, ds, report);
-					if (!VIGEM_SUCCESS(error))
-					{
-						std::cerr << "[App] Failed to send DS5 report." << std::endl;
-					}
-					break;
-				}
-			case 0x01:
-				{
-					cout << "Receive 0x01 Input Report: " << hexStr(buf,63) << endl;
-				}
-			}
-		}else
-		{
-			cerr << "HID READ ERROR: " << hid_read_error(device) << endl;
 		}
 
 		//error = vigem_target_DS5_await_output_report(client, ds5, &out);
@@ -464,7 +477,7 @@ int main()
 		if (VIGEM_SUCCESS(error))
 		{
 			cout << "Receive Output Report: " << endl;
-			// std::cout << hexStr(out.Buffer, sizeof(DS5_OUTPUT_BUFFER)) << std::endl;
+			// cout << hexStr(out.Buffer, sizeof(DS5_OUTPUT_BUFFER)) << endl;
 			
 			RtlZeroMemory(outputData, sizeof(outputData));
 			outputData[0] = 0x31;
@@ -482,18 +495,24 @@ int main()
 			outputData[sizeof(outputData) - 1] = (crc >> 24) & 0xFF;
 			
 			// cout << "Send Output Report: ";
-			// std::cout << hexStr(outputData, sizeof(outputData)) << std::endl;
+			// cout << hexStr(outputData, sizeof(outputData)) << endl;
 			
-			if (hid_write(device, outputData, sizeof(outputData)) == 1)
+			int writeResult = 0;
 			{
-				cerr << "hid_write failed" << endl;
+				lock_guard<mutex> lock(g_hidMutex);
+				writeResult = hid_write(device, outputData, sizeof(outputData));
+			}
+			if (writeResult < 0)
+			{
+				lock_guard<mutex> lock(g_hidMutex);
+				cerr << "hid_write failed: " << hid_read_error(device) << endl;
 			}
 		}
 		else if (error != VIGEM_ERROR_TIMED_OUT)
 		{
 			auto win32 = GetLastError();
 
-			std::wcerr << L"vigem await output report failed. GetLastError="
+			wcerr << L"vigem await output report failed. GetLastError="
 					   << win32 << L" (" << Win32ErrorToString(win32) << L")\n";
 		}
 	}
