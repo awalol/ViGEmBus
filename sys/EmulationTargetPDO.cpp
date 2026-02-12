@@ -1040,7 +1040,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 		{
 		case URB_FUNCTION_CONTROL_TRANSFER:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_CONTROL_TRANSFER");
 
@@ -1050,7 +1050,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_CONTROL_TRANSFER_EX:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_CONTROL_TRANSFER_EX");
 
@@ -1070,7 +1070,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_ISOCH_TRANSFER:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_ISOCH_TRANSFER");
 
@@ -1080,7 +1080,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_SELECT_CONFIGURATION:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_SELECT_CONFIGURATION");
 
@@ -1090,7 +1090,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_SELECT_INTERFACE:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_SELECT_INTERFACE");
 
@@ -1100,7 +1100,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE");
 
@@ -1108,7 +1108,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 			{
 			case USB_DEVICE_DESCRIPTOR_TYPE:
 
-				TraceInformation(
+				TraceVerbose(
 					TRACE_BUSPDO,
 					">> >> >> USB_DEVICE_DESCRIPTOR_TYPE");
 
@@ -1119,7 +1119,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 			case USB_CONFIGURATION_DESCRIPTOR_TYPE:
 
-				TraceInformation(
+				TraceVerbose(
 					TRACE_BUSPDO,
 					">> >> >> USB_CONFIGURATION_DESCRIPTOR_TYPE");
 
@@ -1129,7 +1129,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 			case USB_STRING_DESCRIPTOR_TYPE:
 
-				TraceInformation(
+				TraceVerbose(
 					TRACE_BUSPDO,
 					">> >> >> USB_STRING_DESCRIPTOR_TYPE");
 
@@ -1139,14 +1139,14 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 			default:
 
-				TraceInformation(
+				TraceVerbose(
 					TRACE_BUSPDO,
 					">> >> >> Unknown descriptor type");
 
 				break;
 			}
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				"<< <<");
 
@@ -1154,7 +1154,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_GET_STATUS_FROM_DEVICE:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_GET_STATUS_FROM_DEVICE");
 
@@ -1165,7 +1165,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_ABORT_PIPE:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_ABORT_PIPE");
 
@@ -1177,7 +1177,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_CLASS_INTERFACE:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_CLASS_INTERFACE");
 
@@ -1187,7 +1187,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		case URB_FUNCTION_GET_DESCRIPTOR_FROM_INTERFACE:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_GET_DESCRIPTOR_FROM_INTERFACE");
 
@@ -1198,7 +1198,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 		case URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL:
 			// 就因为这玩意没处理卡我好几天，现象：播放器播不动，进度条不走
 			
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL");
 			
@@ -1208,7 +1208,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 		default:
 
-			TraceInformation(
+			TraceVerbose(
 				TRACE_BUSPDO,
 				">> >>  Unknown function: 0x%X",
 				urb->UrbHeader.Function);
@@ -1260,7 +1260,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 
 	default:
 
-		TraceInformation(
+		TraceVerbose(
 			TRACE_BUSPDO,
 			">> Unknown I/O control code 0x%X",
 			IoControlCode);

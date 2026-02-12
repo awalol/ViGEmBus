@@ -863,10 +863,10 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
 {
     struct _URB_CONTROL_VENDOR_OR_CLASS_REQUEST* pRequest = &Urb->UrbControlVendorClassRequest;
 
-    TraceInformation(
+    TraceVerbose(
         TRACE_USBPDO,
         ">> >> >> URB_FUNCTION_CLASS_INTERFACE");
-    TraceInformation(TRACE_USBPDO,
+    TraceVerbose(TRACE_USBPDO,
                      ">> >> >> TransferFlags = 0x%X, Request = 0x%X, Value = 0x%X, Index = 0x%X, BufLen = %d, RequestTypeReservedBits = 0x%X",
                      pRequest->TransferFlags,
                      pRequest->Request,
@@ -906,7 +906,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
             }
         }
 
-        TraceInformation(TRACE_USBPDO, ">> >> >> TransferBuffer content: %s", bufHex);
+        TraceVerbose(TRACE_USBPDO, ">> >> >> TransferBuffer content: %s", bufHex);
     }
 
     // 0x0200 是扬声器 0x0500 是麦克风
@@ -915,7 +915,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
         UCHAR channel = get_low_bytes(pRequest->Value); // 低位 Channel Number
         UCHAR feature = get_high_bytes(pRequest->Value); // 高位 Feature Unit Control Selector
 
-        TraceInformation(
+        TraceVerbose(
                     TRACE_USBPDO,
                     ">> >> >> >> SET_CUR(0x%02X): 0x%02X, Index: 0x%04X",
                     channel, feature,pRequest->Index);
@@ -961,7 +961,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
         default:
             break;
         }
-        TraceInformation(TRACE_USBPDO, ">> >> >> >> END");
+        TraceVerbose(TRACE_USBPDO, ">> >> >> >> END");
 
         Urb->UrbHeader.Status = USBD_STATUS_SUCCESS;
         return STATUS_SUCCESS;
@@ -1120,7 +1120,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
             UCHAR channel = get_low_bytes(pRequest->Value); // 低位 Channel Number
             UCHAR feature = get_high_bytes(pRequest->Value); // 高位 Feature Unit Control Selector
 
-            TraceInformation(
+            TraceVerbose(
                         TRACE_USBPDO,
                         ">> >> >> >> GET_CUR(0x%02X): 0x%02X, Index=0x%04X",
                         channel, feature, pRequest->Index);
@@ -1161,7 +1161,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
                     {
                     case 0x0200: // 扬声器
                         {
-                            TraceInformation(
+                            TraceVerbose(
                                 TRACE_USBPDO,
                                 ">> >> >> >> Speaker Response");
                             UCHAR Response[] =
@@ -1195,7 +1195,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
             UCHAR channel = get_low_bytes(pRequest->Value); // 低位 Channel Number
             UCHAR feature = get_high_bytes(pRequest->Value); // 高位 Feature Unit Control Selector
 
-            TraceInformation(
+            TraceVerbose(
                 TRACE_USBPDO,
                 ">> >> >> >> GET_MIN(0x%02X): 0x%02X, Index=0x%04X",
                 channel, feature, pRequest->Index);
@@ -1208,7 +1208,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
                     {
                     case 0x0200: // 扬声器
                         {
-                            TraceInformation(
+                            TraceVerbose(
                                 TRACE_USBPDO,
                                 ">> >> >> >> Speaker Response");
                             UCHAR Response[] =
@@ -1242,7 +1242,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
             UCHAR channel = get_low_bytes(pRequest->Value); // 低位 Channel Number
             UCHAR feature = get_high_bytes(pRequest->Value); // 高位 Feature Unit Control Selector
 
-            TraceInformation(
+            TraceVerbose(
                 TRACE_USBPDO,
                 ">> >> >> >> GET_MAX(0x%02X): 0x%02X, Index=0x%04X",
                 channel, feature, pRequest->Index);
@@ -1255,7 +1255,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
                     {
                     case 0x0200: // 扬声器
                         {
-                            TraceInformation(
+                            TraceVerbose(
                                 TRACE_USBPDO,
                                 ">> >> >> >> Speaker Response");
                             UCHAR Response[] =
@@ -1289,7 +1289,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
             UCHAR channel = get_low_bytes(pRequest->Value); // 低位 Channel Number
             UCHAR feature = get_high_bytes(pRequest->Value); // 高位 Feature Unit Control Selector
 
-            TraceInformation(
+            TraceVerbose(
                 TRACE_USBPDO,
                 ">> >> >> >> GET_RES(0x%02X): 0x%02X, Index=0x%04X",
                 channel, feature, pRequest->Index);
@@ -1302,7 +1302,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
                     {
                     case 0x0200: // 扬声器
                         {
-                            TraceInformation(
+                            TraceVerbose(
                                 TRACE_USBPDO,
                                 ">> >> >> >> Speaker Response");
                             UCHAR Response[] =
@@ -1335,7 +1335,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
         break;
     }
     
-    TraceInformation(TRACE_USBPDO, ">> >> >> >> END");
+    TraceVerbose(TRACE_USBPDO, ">> >> >> >> END");
 
     Urb->UrbHeader.Status = USBD_STATUS_SUCCESS;
 
@@ -1660,7 +1660,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbSelectInterface(PURB Urb)
 
 NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbGetStringDescriptorType(PURB Urb)
 {
-    TraceVerbose(
+    TraceInformation(
         TRACE_USBPDO,
         "Index = %d",
         Urb->UrbControlDescriptorRequest.Index);
@@ -2177,7 +2177,7 @@ NTSTATUS USB_BUSIFFN ViGEm::Bus::Targets::EmulationTargetDS5::UsbInterfaceSubmit
             totalAudioLength += packetLength;
         }
             
-        TraceInformation(TRACE_DS5, "ISOCH OUT: Packet %u: Offset=%u, CalcLength=%u, Status=%u", 
+        TraceVerbose(TRACE_DS5, "ISOCH OUT: Packet %u: Offset=%u, CalcLength=%u, Status=%u", 
                        i, packet->Offset, packetLength, packet->Status);
 
         // 设置每个 ISO 包的完成状态
@@ -2189,7 +2189,7 @@ NTSTATUS USB_BUSIFFN ViGEm::Bus::Targets::EmulationTargetDS5::UsbInterfaceSubmit
     {
         audioCache.AudioDataLength = totalAudioLength;
 
-        TraceInformation(TRACE_DS5, "Broadcasting audio data: %u bytes", totalAudioLength);
+        TraceVerbose(TRACE_DS5, "Broadcasting audio data: %u bytes", totalAudioLength);
 
         NTSTATUS broadcastStatus = DMF_NotifyUserWithRequestMultiple_DataBroadcast(
             pdo->_AudioNotify,
@@ -2219,7 +2219,7 @@ NTSTATUS USB_BUSIFFN ViGEm::Bus::Targets::EmulationTargetDS5::UsbInterfaceSubmit
             / static_cast<ULONGLONG>(perfFreq.QuadPart);
     }
 
-    TraceInformation(TRACE_DS5, 
+    TraceVerbose(TRACE_DS5, 
                     "ISOCH OUT URB completed: StartFrame=%u, Packets=%u, ErrorCount=%u, ElapsedUs=%llu",
                     isoUrb->StartFrame,
                     isoUrb->NumberOfPackets,

@@ -36,6 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <Inf Include="ViGEmBus.inf" />
+    <Inf Include="ViGEmBus_DS5_Audio.inf" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\sdk\include\ViGEm\km\BusShared.h" />
@@ -271,6 +272,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <AdditionalDependencies>$(DDK_LIB_PATH)wdmsec.lib;%(AdditionalDependencies);ntstrsafe.lib;usbdex.lib</AdditionalDependencies>

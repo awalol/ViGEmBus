@@ -1,0 +1,44 @@
+; Virtual DualSense 5 Audio interface INF
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Media
+ClassGuid={4D36E96C-E325-11CE-BFC1-08002BE10318}
+Provider=%ManufacturerName%
+CatalogFile=ViGEmBus_DS5_Audio.cat
+DriverVer= ;
+PnpLockdown=1
+
+[Manufacturer]
+%ManufacturerName%=Standard,NTamd64,NTx86,NTARM64
+
+[Standard.NTamd64]
+%DS5.AudioDesc%=DS5_Audio, USB\VID_054C&PID_0CE6&MI_00
+%DS5.AudioDesc%=DS5_Audio, USB\VID_054C&PID_0CE6&REV_0100&MI_00
+
+[Standard.NTx86]
+%DS5.AudioDesc%=DS5_Audio, USB\VID_054C&PID_0CE6&MI_00
+%DS5.AudioDesc%=DS5_Audio, USB\VID_054C&PID_0CE6&REV_0100&MI_00
+
+[Standard.NTARM64]
+%DS5.AudioDesc%=DS5_Audio, USB\VID_054C&PID_0CE6&MI_00
+%DS5.AudioDesc%=DS5_Audio, USB\VID_054C&PID_0CE6&REV_0100&MI_00
+
+[DS5_Audio.NT]
+Include=wdma_usb.inf
+Needs=USBAudio.NT
+AddReg=DS5_Audio.AddReg
+
+[DS5_Audio.NT.Services]
+Include=wdma_usb.inf
+Needs=USBAudio.NT.Services
+
+[DS5_Audio.AddReg]
+HKR,,FriendlyName,0,%DS5.AudioName%
+HKR,,DeviceDesc,0,%DS5.AudioDesc%
+
+[Strings]
+ManufacturerName="Nefarius Software Solutions e.U."
+DS5.AudioDesc="DualSense Wireless Controller"
+DS5.AudioName="DualSense Wireless Controller"
