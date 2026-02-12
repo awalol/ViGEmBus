@@ -15,8 +15,17 @@
 #include <atomic>
 #include <mutex>
 #include <csignal>
+#include <hidapi/hidapi.h>
 
 #pragma comment(lib, "setupapi.lib")
+#pragma comment(lib, "hid.lib")
+
+using namespace std;
+
+namespace
+{
+	hid_device *device = nullptr;
+}
 
 //
 // DS5 Audio OUT format: 4-channel, 16-bit PCM, 48000 Hz
@@ -98,6 +107,12 @@ static BOOL WINAPI ConsoleCtrlHandler(DWORD ctrlType)
 {
 	if (ctrlType == CTRL_C_EVENT || ctrlType == CTRL_CLOSE_EVENT || ctrlType == CTRL_BREAK_EVENT)
 	{
+		if (device)
+		{
+			cout << "Closing HIDAPI..." << endl;
+			hid_close(device);
+			hid_exit();
+		}
 		std::cout << "\n[App] Stopping... writing WAV file." << std::endl;
 		g_running = false;
 		WriteWavFile("DS5_audio_out.wav");
@@ -154,10 +169,68 @@ static std::wstring Win32ErrorToString(DWORD error)
 	return msg;
 }
 
+static uint32_t crc32(const uint8_t* data, size_t size) {
+	uint32_t crc = ~0xEADA2D49;  // 0xA2 seed
+
+	while (size--) {
+		crc ^= *data++;
+		for (unsigned i = 0; i < 8; i++)
+			crc = ((crc >> 1) ^ (0xEDB88320 & -(static_cast<int>(crc & 1))));
+	}
+
+	return ~crc;
+}
+
 int main()
 {
 	// 注册 Ctrl+C 处理，退出时保存WAV
 	SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
+	
+	if (hid_init() < 0)
+	{
+		wcout << "HIDAPI Init Fail" << L"\n";
+		return -1;
+	}
+	device = hid_open(0x054C, 0x0CE6, L"143a9ae438ec");
+	if (!device)
+	{
+		wcerr << "打开设备失败" << L"\n";
+		hid_exit();
+		return -1;
+	}
+	wcout << "连接设备成功" << L"\n";
+	
+	wchar_t manufacture_name[256];
+	if (hid_get_manufacturer_string(device, manufacture_name, 256) >= 0)
+	{
+		wcout << L"ManufactureName: " << manufacture_name << L"\n";
+	}
+	else
+	{
+		wcerr << "ManufactureName 获取失败" << L"\n";
+	}
+	
+	wchar_t product_name[256];
+	if (hid_get_product_string(device, product_name, 256) >= 0)
+	{
+		wcout << L"ProductName: " << product_name << L"\n";
+	}else
+	{
+		wcerr << "ProductName 获取失败" << L"\n";
+	}
+	
+	wchar_t serial_number[256];
+	if (hid_get_serial_number_string(device, serial_number, 256) >= 0)
+	{
+		wcout << L"SerialNumber: " << serial_number << L"\n";
+	}else
+	{
+		wcerr << "SerialNumber 获取失败" << L"\n";
+	}
+	
+	hid_set_nonblocking(device,1);
+	
+	unsigned char buf[78];
 
 	const auto client = vigem_alloc();
 
@@ -220,6 +293,8 @@ int main()
 	std::cout << "[App] Recording audio to DS5_audio_out.wav. Press 'k' to send report, Ctrl+C to stop." << std::endl;
 
 	DS5_OUTPUT_BUFFER out;
+	int outputSeq = 0;
+	uint8_t outputData[78];
 
 	while (TRUE) 
 	{
@@ -354,19 +429,130 @@ int main()
 			// 防止连续触发
 			Sleep(200);
 		}
+		int read = hid_read(device, buf, sizeof(buf));
+		if (read > 1)
+		{
+			switch (buf[0])
+			{
+			case 0x31:
+				{
+					// cout << "Receive Input Report: " << hexStr(buf,78) << endl;
+					DS5_REPORT report;
+					RtlZeroMemory(&report, sizeof(DS5_REPORT));
+					RtlCopyMemory(&report,buf + 2,sizeof(DS5_REPORT));
+			
+					error = vigem_target_DS5_update(client, ds, report);
+					if (!VIGEM_SUCCESS(error))
+					{
+						std::cerr << "[App] Failed to send DS5 report." << std::endl;
+					}
+					break;
+				}
+			case 0x01:
+				{
+					cout << "Receive 0x01 Input Report: " << hexStr(buf,63) << endl;
+				}
+			}
+		}else
+		{
+			cerr << "HID READ ERROR: " << hid_read_error(device) << endl;
+		}
 
 		//error = vigem_target_DS5_await_output_report(client, ds5, &out);
 		error = vigem_target_DS5_await_output_report_timeout(client, ds, 100, &out);
 		
 		if (VIGEM_SUCCESS(error))
 		{
-			std::cout << hexStr(out.Buffer, sizeof(DS5_OUTPUT_BUFFER)) << std::endl;
+			cout << "Receive Output Report: " << endl;
+			// std::cout << hexStr(out.Buffer, sizeof(DS5_OUTPUT_BUFFER)) << std::endl;
+			
+			RtlZeroMemory(outputData, sizeof(outputData));
+			outputData[0] = 0x31;
+			outputData[1] = outputSeq << 4;
+			if (++outputSeq == 256)
+			{
+				outputSeq = 0;
+			}
+			outputData[2] = 0x10;
+			RtlCopyMemory(outputData + 3, out.Buffer + 1, sizeof(DS5_OUTPUT_BUFFER) - 1);
+			uint32_t crc = crc32(outputData, sizeof(outputData) - 4);
+			outputData[sizeof(outputData) - 4] = (crc >> 0) & 0xFF;
+			outputData[sizeof(outputData) - 3] = (crc >> 8) & 0xFF;
+			outputData[sizeof(outputData) - 2] = (crc >> 16) & 0xFF;
+			outputData[sizeof(outputData) - 1] = (crc >> 24) & 0xFF;
+			
+			// cout << "Send Output Report: ";
+			// std::cout << hexStr(outputData, sizeof(outputData)) << std::endl;
+			
+			if (hid_write(device, outputData, sizeof(outputData)) == 1)
+			{
+				cerr << "hid_write failed" << endl;
+			}
 		}
 		else if (error != VIGEM_ERROR_TIMED_OUT)
 		{
 			auto win32 = GetLastError();
 
-			auto t = 0;
+			std::wcerr << L"vigem await output report failed. GetLastError="
+					   << win32 << L" (" << Win32ErrorToString(win32) << L")\n";
 		}
 	}
 }
+
+/*int main()
+{
+	SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
+	if (hid_init() < 0)
+	{
+		wcout << "HIDAPI Init Fail" << L"\n";
+		return -1;
+	}
+	
+	device = hid_open(0x054C, 0x0CE6, NULL);
+	if (!device)
+	{
+		wcerr << "打开设备失败" << L"\n";
+		hid_exit();
+		return -1;
+	}
+	wcout << "连接设备成功" << L"\n";
+	
+	wchar_t manufacture_name[256];
+	if (hid_get_manufacturer_string(device, manufacture_name, 256) >= 0)
+	{
+		wcout << L"ManufactureName: " << manufacture_name << L"\n";
+	}
+	else
+	{
+		wcerr << "ManufactureName 获取失败" << L"\n";
+	}
+	
+	wchar_t product_name[256];
+	if (hid_get_product_string(device, product_name, 256) >= 0)
+	{
+		wcout << L"ProductName: " << product_name << L"\n";
+	}else
+	{
+		wcerr << "ProductName 获取失败" << L"\n";
+	}
+	
+	wchar_t serial_number[256];
+	if (hid_get_serial_number_string(device, serial_number, 256) >= 0)
+	{
+		wcout << L"SerialNumber: " << serial_number << L"\n";
+	}else
+	{
+		wcerr << "SerialNumber 获取失败" << L"\n";
+	}
+	
+	hid_set_nonblocking(device,1);
+	
+	unsigned char buf[78];
+	while (true)
+	{
+		if (hid_read(device, buf, sizeof(buf)) > 0)
+		{
+			cout << hexStr(buf, 78) << endl;
+		}
+	}
+}*/
