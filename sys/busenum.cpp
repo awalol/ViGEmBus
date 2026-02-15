@@ -40,6 +40,7 @@
 #include "EmulationTargetPDO.hpp"
 #include "XusbPdo.hpp"
 #include "Ds4Pdo.hpp"
+#include "Ds5Pdo.hpp"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, Bus_PlugInDevice)
@@ -50,6 +51,7 @@ using ViGEm::Bus::Core::PDO_IDENTIFICATION_DESCRIPTION;
 using ViGEm::Bus::Core::EmulationTargetPDO;
 using ViGEm::Bus::Targets::EmulationTargetXUSB;
 using ViGEm::Bus::Targets::EmulationTargetDS4;
+using ViGEm::Bus::Targets::EmulationTargetDS5;
 
 //
 // Simulates a device plug-in event.
@@ -151,6 +153,11 @@ EXTERN_C NTSTATUS Bus_PlugInDevice(
 			description.Target = new EmulationTargetDS4(plugIn->SerialNo, pFileData->SessionId);
 
 			break;
+		case DualSense5Wired:
+
+			description.Target = new EmulationTargetDS5(plugIn->SerialNo, pFileData->SessionId);
+
+			break;
 		default:
 			return STATUS_NOT_SUPPORTED;
 		}
@@ -179,6 +186,16 @@ EXTERN_C NTSTATUS Bus_PlugInDevice(
 			);
 
 			break;
+		case DualSense5Wired:
+
+			description.Target = new EmulationTargetDS5(
+				plugIn->SerialNo,
+				pFileData->SessionId,
+				plugIn->VendorId,
+				plugIn->ProductId
+			);
+
+			break;
 		default:
 			return STATUS_NOT_SUPPORTED;
 		}
@@ -192,6 +209,11 @@ EXTERN_C NTSTATUS Bus_PlugInDevice(
 	if (plugIn->TargetType == DualShock4Wired)
 	{
 		static_cast<EmulationTargetDS4*>(description.Target)->SetOutputReportNotifyModule(FdoGetData(Device)->UserNotification);
+	}
+	
+	if (plugIn->TargetType == DualSense5Wired)
+	{
+		static_cast<EmulationTargetDS5*>(description.Target)->SetOutputReportNotifyModule(FdoGetData(Device)->UserNotification);
 	}
 
 	status = WdfChildListAddOrUpdateChildDescriptionAsPresent(

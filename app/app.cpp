@@ -28,20 +28,20 @@ int main()
 
 	auto error = vigem_connect(client);
 
-	const auto ds4 = vigem_target_ds4_alloc();
+	const auto ds4 = vigem_target_ds5_alloc();
 
 	error = vigem_target_add(client, ds4);
 
-	DS4_OUTPUT_BUFFER out;
+	DS5_OUTPUT_BUFFER out;
 
 	while (TRUE) 
 	{
 		//error = vigem_target_ds4_await_output_report(client, ds4, &out);
-		error = vigem_target_ds4_await_output_report_timeout(client, ds4, 100, &out);
+		error = vigem_target_ds5_await_output_report_timeout(client, ds4, 100, &out);
 		
 		if (VIGEM_SUCCESS(error))
 		{
-			std::cout << hexStr(out.Buffer, sizeof(DS4_OUTPUT_BUFFER)) << std::endl;
+			std::cout << hexStr(out.Buffer, sizeof(DS5_OUTPUT_BUFFER)) << std::endl;
 		}
 		else if (error != VIGEM_ERROR_TIMED_OUT)
 		{

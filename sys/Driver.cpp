@@ -50,11 +50,13 @@
 #include "EmulationTargetPDO.hpp"
 #include "XusbPdo.hpp"
 #include "Ds4Pdo.hpp"
+#include "Ds5Pdo.hpp"
 
 using ViGEm::Bus::Core::PDO_IDENTIFICATION_DESCRIPTION;
 using ViGEm::Bus::Core::EmulationTargetPDO;
 using ViGEm::Bus::Targets::EmulationTargetXUSB;
 using ViGEm::Bus::Targets::EmulationTargetDS4;
+using ViGEm::Bus::Targets::EmulationTargetDS5;
 
 
 EXTERN_C_START
@@ -68,9 +70,12 @@ IoctlHandler_IoctlRecord ViGEmBus_IoctlSpecification[] =
 	{IOCTL_XUSB_SUBMIT_REPORT, sizeof(XUSB_SUBMIT_REPORT), 0, Bus_XusbSubmitReportHandler},
 	{IOCTL_XUSB_REQUEST_NOTIFICATION, sizeof(XUSB_REQUEST_NOTIFICATION), sizeof(XUSB_REQUEST_NOTIFICATION), Bus_XusbRequestNotificationHandler},
 	{IOCTL_DS4_SUBMIT_REPORT, sizeof(DS4_SUBMIT_REPORT), 0, Bus_Ds4SubmitReportHandler},
+	{IOCTL_DS5_SUBMIT_REPORT, sizeof(DS5_SUBMIT_REPORT), 0, Bus_Ds5SubmitReportHandler},
 	{IOCTL_DS4_REQUEST_NOTIFICATION, sizeof(DS4_REQUEST_NOTIFICATION), sizeof(DS4_REQUEST_NOTIFICATION), Bus_Ds4RequestNotificationHandler},
+	{IOCTL_DS5_REQUEST_NOTIFICATION, sizeof(DS5_REQUEST_NOTIFICATION), sizeof(DS5_REQUEST_NOTIFICATION), Bus_Ds5RequestNotificationHandler},
 	{IOCTL_XUSB_GET_USER_INDEX, sizeof(XUSB_GET_USER_INDEX), sizeof(XUSB_GET_USER_INDEX), Bus_XusbGetUserIndexHandler},
 	{IOCTL_DS4_AWAIT_OUTPUT_AVAILABLE, sizeof(DS4_AWAIT_OUTPUT), sizeof(DS4_AWAIT_OUTPUT), Bus_Ds4AwaitOutputHandler},
+	{IOCTL_DS5_AWAIT_OUTPUT_AVAILABLE, sizeof(DS5_AWAIT_OUTPUT), sizeof(DS5_AWAIT_OUTPUT), Bus_Ds5AwaitOutputHandler},
 };
 
 //
