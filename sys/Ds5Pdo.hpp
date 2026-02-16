@@ -91,9 +91,6 @@ namespace ViGEm::Bus::Targets
 
 	private:
 		static EVT_WDF_TIMER PendingUsbRequestsTimerFunc;
-		static EVT_WDF_TIMER PendingIsoOutTimerFunc;
-
-		static VOID ReverseByteArray(PUCHAR Array, INT Length);
 
 	protected:
 		void ProcessPendingNotification(WDFQUEUE Queue) override;
