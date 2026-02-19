@@ -21,7 +21,8 @@ The `ViGEmBus` driver and `ViGEmClient` libraries represent the core of the Virt
 Emulation of the following USB Gamepads is supported:
 
 - [Microsoft Xbox 360 Controller](https://en.wikipedia.org/wiki/Xbox_360_controller)
-- [Sony DualShock 4 Controller](https://en.wikipedia.org/wiki/DualShock#DualShock_4)
+- ~~[Sony DualShock 4 Controller](https://en.wikipedia.org/wiki/DualShock#DualShock_4)~~ (Temporarily removed, will add it back later.)
+- Sony DualSense 5 Controller (HID is working, but USB audio is still under development.)
 
 ## Use cases
 
