@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Virtual Gamepad Emulation Framework - Windows kernel-mode bus driver
 *
 * BSD 3-Clause License
@@ -743,7 +743,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbGetDeviceDescriptorType(PUS
     pDescriptor->bcdDevice = 0x0100;
     pDescriptor->iManufacturer = 0x01;
     pDescriptor->iProduct = 0x02;
-    pDescriptor->iSerialNumber = 0x00;
+    pDescriptor->iSerialNumber = 0x03;
     pDescriptor->bNumConfigurations = 0x01;
 
     return STATUS_SUCCESS;
@@ -1665,6 +1665,18 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbGetStringDescriptorType(PUR
         "Index = %d",
         Urb->UrbControlDescriptorRequest.Index);
 
+    auto writeDescriptor = [Urb](const UCHAR* pDescriptor, ULONG descriptorLength)
+    {
+        const ULONG requestedLength = Urb->UrbControlDescriptorRequest.TransferBufferLength;
+        Urb->UrbControlDescriptorRequest.TransferBufferLength = descriptorLength;
+
+        if (Urb->UrbControlDescriptorRequest.TransferBuffer == nullptr || requestedLength == 0)
+            return;
+
+        const ULONG bytesToCopy = (requestedLength < descriptorLength) ? requestedLength : descriptorLength;
+        RtlCopyBytes(Urb->UrbControlDescriptorRequest.TransferBuffer, pDescriptor, bytesToCopy);
+    };
+
     switch (Urb->UrbControlDescriptorRequest.Index)
     {
     case 0:
@@ -1675,8 +1687,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbGetStringDescriptorType(PUR
                 0x04, 0x03, 0x09, 0x04
             };
 
-            Urb->UrbControlDescriptorRequest.TransferBufferLength = ARRAYSIZE(LangId);
-            RtlCopyBytes(Urb->UrbControlDescriptorRequest.TransferBuffer, LangId, ARRAYSIZE(LangId));
+            writeDescriptor(LangId, static_cast<ULONG>(ARRAYSIZE(LangId)));
 
             break;
         }
@@ -1686,13 +1697,6 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbGetStringDescriptorType(PUR
                 TRACE_USBPDO,
                 "LanguageId = 0x%X",
                 Urb->UrbControlDescriptorRequest.LanguageId);
-
-            if (Urb->UrbControlDescriptorRequest.TransferBufferLength < DS5_MANUFACTURER_NAME_LENGTH)
-            {
-                auto pDesc = static_cast<PUSB_STRING_DESCRIPTOR>(Urb->UrbControlDescriptorRequest.TransferBuffer);
-                pDesc->bLength = DS5_MANUFACTURER_NAME_LENGTH;
-                break;
-            }
 
             // "Sony Computer Entertainment"
             UCHAR ManufacturerString[DS5_MANUFACTURER_NAME_LENGTH] =
@@ -1706,9 +1710,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbGetStringDescriptorType(PUR
                 0x6D, 0x00, 0x65, 0x00, 0x6E, 0x00, 0x74, 0x00
             };
 
-            Urb->UrbControlDescriptorRequest.TransferBufferLength = DS5_MANUFACTURER_NAME_LENGTH;
-            RtlCopyBytes(Urb->UrbControlDescriptorRequest.TransferBuffer, ManufacturerString,
-                         DS5_MANUFACTURER_NAME_LENGTH);
+            writeDescriptor(ManufacturerString, DS5_MANUFACTURER_NAME_LENGTH);
 
             break;
         }
@@ -1718,13 +1720,6 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbGetStringDescriptorType(PUR
                 TRACE_USBPDO,
                 "LanguageId = 0x%X",
                 Urb->UrbControlDescriptorRequest.LanguageId);
-
-            if (Urb->UrbControlDescriptorRequest.TransferBufferLength < DS5_PRODUCT_NAME_LENGTH)
-            {
-                auto pDesc = static_cast<PUSB_STRING_DESCRIPTOR>(Urb->UrbControlDescriptorRequest.TransferBuffer);
-                pDesc->bLength = DS5_PRODUCT_NAME_LENGTH;
-                break;
-            }
 
             // "DualSense Wireless Controller"
             UCHAR ProductString[DS5_PRODUCT_NAME_LENGTH] =
@@ -1739,8 +1734,19 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbGetStringDescriptorType(PUR
                 0x65, 0x0, 0x72, 0x0
             };
 
-            Urb->UrbControlDescriptorRequest.TransferBufferLength = DS5_PRODUCT_NAME_LENGTH;
-            RtlCopyBytes(Urb->UrbControlDescriptorRequest.TransferBuffer, ProductString, DS5_PRODUCT_NAME_LENGTH);
+            writeDescriptor(ProductString, DS5_PRODUCT_NAME_LENGTH);
+
+            break;
+        }
+    case 3:
+        {
+            UCHAR SerialNumber[] =
+            {
+                0x0C, 0x03, 0x48, 0x00, 0x45, 0x00, 0x4C, 0x00,
+                0x4C, 0x00, 0x4F, 0x00
+            };
+
+            writeDescriptor(SerialNumber, static_cast<ULONG>(ARRAYSIZE(SerialNumber)));
 
             break;
         }

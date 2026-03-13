@@ -1198,7 +1198,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 		case URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL:
 			// 就因为这玩意没处理卡我好几天，现象：播放器播不动，进度条不走
 			
-			TraceVerbose(
+			TraceInformation(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL");
 			
