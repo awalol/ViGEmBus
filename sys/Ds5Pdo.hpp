@@ -106,6 +106,8 @@ namespace ViGEm::Bus::Targets
 		VOID SetAudioNotifyModule(DMFMODULE Module);
 
 		static NTSTATUS USB_BUSIFFN UsbInterfaceSubmitIsoOutUrb(IN PVOID BusContext, IN PURB Urb);
+		
+		static NTSTATUS USB_BUSIFFN UsbInterfaceSubmitIsoOutUrb1(IN PVOID BusContext, IN PURB Urb);
 
 	private:
 		static EVT_WDF_TIMER PendingUsbRequestsTimerFunc;

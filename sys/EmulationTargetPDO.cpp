@@ -596,7 +596,7 @@ BOOLEAN USB_BUSIFFN ViGEm::Bus::Core::EmulationTargetPDO::UsbInterfaceIsDeviceHi
 {
 	UNREFERENCED_PARAMETER(BusContext);
 
-	return TRUE;
+	return FALSE;
 }
 
 NTSTATUS USB_BUSIFFN ViGEm::Bus::Core::EmulationTargetPDO::UsbInterfaceQueryBusInformation(
@@ -1202,6 +1202,7 @@ VOID ViGEm::Bus::Core::EmulationTargetPDO::EvtIoInternalDeviceControl(
 				TRACE_BUSPDO,
 				">> >> URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL");
 			
+			urb->UrbHeader.Status = USBD_STATUS_SUCCESS;
 			status = STATUS_SUCCESS;
 			
 			break;

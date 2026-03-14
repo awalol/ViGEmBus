@@ -164,6 +164,11 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::PdoPrepareDevice(PWDFDEVICE_IN
     return STATUS_SUCCESS;
 }
 
+NTSTATUS USB_BUSIFFN ViGEm::Bus::Targets::EmulationTargetDS5::UsbInterfaceSubmitIsoOutUrb1(IN PVOID BusContext, IN PURB Urb)
+{
+    return STATUS_SUCCESS;
+}
+
 NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::PdoPrepareHardware()
 {
     NTSTATUS status;
@@ -284,6 +289,7 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::PdoInitContext()
         {
             WDF_IO_QUEUE_CONFIG isoQueueConfig;
             WDF_IO_QUEUE_CONFIG_INIT(&isoQueueConfig, WdfIoQueueDispatchManual);
+            isoQueueConfig.PowerManaged = WdfFalse;
 
             if (!NT_SUCCESS(status = WdfIoQueueCreate(
                 this->_PdoDevice,
@@ -298,6 +304,8 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::PdoInitContext()
                     status);
                 break;
             }
+
+            WdfIoQueueStart(this->_PendingIsoOutRequests);
         }
 
         //
@@ -1344,6 +1352,9 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbClassInterface(PURB Urb)
 
 NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbIsochronousTransfer(PURB Urb, WDFREQUEST Request)
 {
+    if (Urb == nullptr || Urb->UrbHeader.Length < sizeof(Urb->UrbIsochronousTransfer))
+        return STATUS_INVALID_PARAMETER;
+
     //
     // Process audio data immediately (extract and broadcast to user-mode),
     // but delay the URB completion to throttle USBAudio's submission rate.
@@ -1356,6 +1367,11 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::UsbIsochronousTransfer(PURB Ur
     // matching real USB isochronous transfer timing (~10-20ms per URB).
     //
     NTSTATUS status = WdfRequestForwardToIoQueue(Request, this->_PendingIsoOutRequests);
+    if (status == STATUS_WDF_BUSY)
+    {
+        WdfIoQueueStart(this->_PendingIsoOutRequests);
+        status = WdfRequestForwardToIoQueue(Request, this->_PendingIsoOutRequests);
+    }
     if (!NT_SUCCESS(status))
     {
         TraceEvents(TRACE_LEVEL_WARNING, TRACE_DS5,
