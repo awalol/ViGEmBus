@@ -28,9 +28,6 @@
     <Inf Include="ViGEmBus.inf">
       <Filter>Driver Files</Filter>
     </Inf>
-    <Inf Include="ViGEmBus_DS5_Audio.inf">
-      <Filter>Driver Files</Filter>
-    </Inf>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="trace.h">

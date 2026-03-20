@@ -320,6 +320,11 @@ NTSTATUS ViGEm::Bus::Targets::EmulationTargetDS5::PdoInitContext()
                 PendingIsoOutTimerFunc,
                 DS5_ISO_OUT_COMPLETION_PERIOD_MS
             );
+            
+            isoTimerConfig.UseHighResolutionTimer = WdfTrue;
+            // TolerableDelay = 1ms 允许 10% 的时间容差，
+            // 避免完全零容差导致系统过载和音频卡顿
+            // isoTimerConfig.TolerableDelay = 1;
 
             WDF_OBJECT_ATTRIBUTES isoTimerAttribs;
             WDF_OBJECT_ATTRIBUTES_INIT(&isoTimerAttribs);

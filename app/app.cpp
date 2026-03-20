@@ -36,7 +36,7 @@ int main()
 
 	auto error = vigem_connect(client);
 
-	const auto ds4 = vigem_target_DS5_alloc();
+	const auto ds4 = vigem_target_ds5_alloc();
 
 	error = vigem_target_add(client, ds4);
 
@@ -45,7 +45,7 @@ int main()
 	while (TRUE) 
 	{
 		//error = vigem_target_ds4_await_output_report(client, ds4, &out);
-		error = vigem_target_DS5_await_output_report_timeout(client, ds4, 100, &out);
+		error = vigem_target_ds5_await_output_report_timeout(client, ds4, 100, &out);
 		
 		if (VIGEM_SUCCESS(error))
 		{

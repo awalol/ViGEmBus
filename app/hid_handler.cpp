@@ -70,7 +70,7 @@ int hid_handler::hid_handler_init()
     // 初始化 ViGEmBus 虚拟设备 
 	const auto client = vigem_alloc();
 	auto error = vigem_connect(client);
-	const auto ds = vigem_target_DS5_alloc();
+	const auto ds = vigem_target_ds5_alloc();
 
 	vigem_client = client;
 	vigem_ds = ds;
@@ -109,7 +109,7 @@ void hid_handler::proxy_thread(stop_token stoken)
                     RtlZeroMemory(&report, sizeof(DS5_REPORT));
                     RtlCopyMemory(&report, buf + 2, sizeof(DS5_REPORT));
 
-                    auto error = vigem_target_DS5_update(vigem_client, vigem_ds, report);
+                    auto error = vigem_target_ds5_update(vigem_client, vigem_ds, report);
                     if (!VIGEM_SUCCESS(error))
                     {
                         cerr << "[App] Failed to send DS5 report." << endl;
@@ -277,7 +277,7 @@ void hid_handler::output_report_thread(stop_token stoken)
 			report.bAesCmac[6] = 0x75;
 			report.bAesCmac[7] = 0x3D;
 
-			error = vigem_target_DS5_update(vigem_client, vigem_ds, report);
+			error = vigem_target_ds5_update(vigem_client, vigem_ds, report);
 			if (VIGEM_SUCCESS(error))
 				cout << "[App] DS5 report sent successfully." << endl;
 			else
@@ -288,7 +288,7 @@ void hid_handler::output_report_thread(stop_token stoken)
 		}
 
     	// error = vigem_target_DS5_await_output_report(vigem_client, vigem_ds, &out);
-		error = vigem_target_DS5_await_output_report_timeout(vigem_client, vigem_ds, 100, &out);
+		error = vigem_target_ds5_await_output_report_timeout(vigem_client, vigem_ds, 100, &out);
 		
 		if (VIGEM_SUCCESS(error))
 		{

@@ -36,7 +36,6 @@
   </ItemGroup>
   <ItemGroup>
     <Inf Include="ViGEmBus.inf" />
-    <Inf Include="ViGEmBus_DS5_Audio.inf" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\sdk\include\ViGEm\km\BusShared.h" />
